@@ -1,0 +1,28 @@
+// Respective ASCII characters for reverse translation.
+// Used to translate from Wingdings to ASCII, since there is no apparent algorithm (to me) that
+// allows for easy conversion from ASCII to Wingdings and vice versa.
+const char ASCII[] = {
+    // Symbols 1
+    '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.',
+    '/',
+
+    // Numerical characters
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+
+    // Symbols 2
+    ':', ';', '<', '=', '>', '?', '@',
+
+    // Uppercase alphabetical characters
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+    'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+
+    // Symbols 3
+    '[', '\\', ']', '^', '_', '`',
+
+    // Lowercase alphabetical characters
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+    'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+
+    // Symbols 4
+    '{', '|', '}', '~'
+};
