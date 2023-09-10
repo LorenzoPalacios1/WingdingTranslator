@@ -5,14 +5,17 @@
 #include "MyBasics.h"
 
 #define NUM_WINGDINGS (94)
-// The maximum size of one Wingdings "character" in bytes 
+// The maximum size of one Wingdings "character" in bytes
 // (they're represented as strings, so this includes a null terminator)
 #define MAX_WINGDINGS_CHAR_SIZE (sizeof(wingdings) / NUM_WINGDING_CHARS)
 
 #define CODE_ENGLISH_TO_WINGDINGS (0)
 #define CODE_WINGDINGS_TO_ENGLISH (1)
 
-#define FILENAME_OUTPUT "out.txt"
+#define OUTPUT_FILENAME "out.txt"
+
+// The maximum number of bytes to read from one line of input.
+#define MAX_BYTE_READS (1000)
 
 // Preferably keep the below keywords unique enough so that they won't
 // interfere with normal input when the translator picks up input.
@@ -76,7 +79,7 @@ int translate_eng_to_wingdings(void)
         char *input = NULL;
         printf("Enter English here: ");
 
-        getStrStdin(&input, UINT_MAX);
+        getStrStdin(&input, MAX_BYTE_READS);
 
         if (input == NULL)
             continue;
@@ -106,7 +109,7 @@ int translate_wingdings_to_eng(void)
     {
         char *input = NULL;
         printf("Enter Wingdings here: ");
-        getStrStdin(&input, 1000);
+        getStrStdin(&input, MAX_BYTE_READS);
 
         if (input == NULL)
             continue;
@@ -131,29 +134,28 @@ int prompt_user_for_use_case(void)
     puts("0. Translate English-to-Wingdings");
     puts("1. Translate Wingdings-to-English");
 
-    int user_choice = charToInt(getchar());
-
-    while (user_choice != CODE_ENGLISH_TO_WINGDINGS && user_choice != CODE_WINGDINGS_TO_ENGLISH)
+    int user_choice;
+    // Using a do-while instead of a generic while-loop to ensure that fseek() cleans up any
+    // other unused input, especially newlines, since we only need one digit from the user
+    // specifying which translator they're wanting
+    do
     {
-        // fseeking to the end to discard any other input since we're only looking for a single
-        // digit
-        fseek(stdin, 0, SEEK_END);
-        puts("Enter a valid option (0 or 1)");
         user_choice = charToInt(getchar());
-    }
+        fseek(stdin, 0, SEEK_END);
+    } while (user_choice != CODE_ENGLISH_TO_WINGDINGS && user_choice != CODE_WINGDINGS_TO_ENGLISH);
     return user_choice;
 }
 
 int main(void)
 {
     puts(wingdings[9]);
-    fopen_s(&output_file, FILENAME_OUTPUT, "rw");
+    fopen_s(&output_file, OUTPUT_FILENAME, "rw");
     puts("Welcome to the Wingdings \"translator\"!\n");
     int user_choice = prompt_user_for_use_case();
 
     while (user_choice)
     {
-        const int return_status = user_choice ? translate_eng_to_wingdings() : translate_wingdings_to_eng();
+        const int return_status = user_choice ? translate_wingdings_to_eng() : translate_eng_to_wingdings();
         if (return_status == EXIT_STATUS_CODE)
             return 0;
         else
