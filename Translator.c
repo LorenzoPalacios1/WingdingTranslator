@@ -9,7 +9,7 @@
 // (they're represented as strings, so this includes a null terminator)
 #define MAX_WINGDINGS_CHAR_SIZE (sizeof(wingdings) / NUM_WINGDING_CHARS)
 
-#define ENG_TO_WINGDINGS_OFFSET ('!')
+#define ENG_TO_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
 
 #define CODE_ENGLISH_TO_WINGDINGS (0)
 #define CODE_WINGDINGS_TO_ENGLISH (1)
@@ -81,7 +81,9 @@ int translate_eng_to_wingdings(void)
         char *input = NULL;
         printf("Enter English here: ");
 
-        const size_t SIZEOF_INPUT = getStrStdin(&input, MAX_BYTE_READS);
+        // "- 1" since getStrStdin() returns the string's length including the null terminator,
+        // which isn't needed
+        const size_t SIZEOF_INPUT = getStrStdin(&input, MAX_BYTE_READS) - 1;
 
         if (input == NULL)
             continue;
@@ -91,28 +93,38 @@ int translate_eng_to_wingdings(void)
             return CHANGE_TRANSLATOR_STATUS_CODE;
 
         /*
-         * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126).
+         * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126),
+         * and nothing else.
          *
          * In other words, this means that the Wingdings equivalent for '!' is located at index 0, or
-         * rather that the number of valid Wingdings is equivalent to the number of ASCII characters,
+         * rather that the number of valid Wingdings is equivalent to the number of ASCII characters
          * offset by '!' (33).
          *
          * Thus, using the array to translate an ASCII character to Wingdings requires you to
-         * take the character's value and offset it by negative 33 (-33)
+         * take the character's value and offset it by negative 33 (-33).
          *
-         * An example being the letter 'e' (value 101), which translates to '♏︎' (index 68) in Wingdings.
-         * In order to get the Wingdings equivalent, 
+         * An example being the letter 'e' (value 101) which translates to '♏︎' (wingdings[68]) in Wingdings.
+         * In order to get the Wingdings equivalent, you'd need to write something like the following:
+         *
+         * > "wingdings['e' - '!']"
+         *
+         * ...or...
+         *
+         * > "wingdings['e' - 33]"
          */
-        printf("%llu\n", SIZEOF_INPUT);
         for (size_t i = 0; i < SIZEOF_INPUT; i++)
         {
             const char current_char = input[i];
-            if (current_char < ENG_TO_WINGDINGS_OFFSET){
+            if (current_char < ENG_TO_WINGDINGS_OFFSET)
+            {
                 fputc(current_char, output_file);
-            } else {
-                fprintf(output_file, wingdings[input[i] - '!']);
+            }
+            else
+            {
+                fprintf(output_file, wingdings[input[i] - ENG_TO_WINGDINGS_OFFSET]);
             }
         }
+        fputc('\n', output_file);
         fflush(output_file);
     }
 }
@@ -173,9 +185,13 @@ int prompt_user_for_translator(void)
 
 int main(void)
 {
-    // DELETE THE BELOW LINE ONCE A TRANSLATOR HAS BEEN FINISHED
-    puts(wingdings[9]);
-    fopen_s(&output_file, OUTPUT_FILENAME, "rw");
+    fopen_s(&output_file, OUTPUT_FILENAME, "a");
+
+    if (!output_file)
+    {
+        fputs("Could not open output file", stderr);
+        return 1;
+    }
 
     puts("Welcome to the Wingdings \"translator\"!");
     int user_choice = prompt_user_for_translator();
@@ -187,7 +203,9 @@ int main(void)
             break;
         else
             user_choice = prompt_user_for_translator();
+        fflush(output_file);
     }
+    fclose(output_file);
 
     return 0;
 }
