@@ -9,6 +9,8 @@
 // (they're represented as strings, so this includes a null terminator)
 #define MAX_WINGDINGS_CHAR_SIZE (sizeof(wingdings) / NUM_WINGDING_CHARS)
 
+#define ENG_TO_WINGDINGS_OFFSET ('!')
+
 #define CODE_ENGLISH_TO_WINGDINGS (0)
 #define CODE_WINGDINGS_TO_ENGLISH (1)
 
@@ -79,7 +81,7 @@ int translate_eng_to_wingdings(void)
         char *input = NULL;
         printf("Enter English here: ");
 
-        getStrStdin(&input, MAX_BYTE_READS);
+        const size_t SIZEOF_INPUT = getStrStdin(&input, MAX_BYTE_READS);
 
         if (input == NULL)
             continue;
@@ -87,6 +89,31 @@ int translate_eng_to_wingdings(void)
             return EXIT_STATUS_CODE;
         if (strcasecmp(input, CHANGE_TRANSLATOR_KEYWORD) == 0)
             return CHANGE_TRANSLATOR_STATUS_CODE;
+
+        /*
+         * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126).
+         *
+         * In other words, this means that the Wingdings equivalent for '!' is located at index 0, or
+         * rather that the number of valid Wingdings is equivalent to the number of ASCII characters,
+         * offset by '!' (33).
+         *
+         * Thus, using the array to translate an ASCII character to Wingdings requires you to
+         * take the character's value and offset it by negative 33 (-33)
+         *
+         * An example being the letter 'e' (value 101), which translates to '♏︎' (index 68) in Wingdings.
+         * In order to get the Wingdings equivalent, 
+         */
+        printf("%llu\n", SIZEOF_INPUT);
+        for (size_t i = 0; i < SIZEOF_INPUT; i++)
+        {
+            const char current_char = input[i];
+            if (current_char < ENG_TO_WINGDINGS_OFFSET){
+                fputc(current_char, output_file);
+            } else {
+                fprintf(output_file, wingdings[input[i] - '!']);
+            }
+        }
+        fflush(output_file);
     }
 }
 
@@ -128,7 +155,7 @@ int translate_wingdings_to_eng(void)
  */
 int prompt_user_for_translator(void)
 {
-    puts("What would you like to translate?");
+    puts("\nWhat would you like to translate?");
     puts("0. Translate English-to-Wingdings");
     puts("1. Translate Wingdings-to-English");
 
@@ -146,13 +173,14 @@ int prompt_user_for_translator(void)
 
 int main(void)
 {
+    // DELETE THE BELOW LINE ONCE A TRANSLATOR HAS BEEN FINISHED
     puts(wingdings[9]);
     fopen_s(&output_file, OUTPUT_FILENAME, "rw");
 
-    puts("Welcome to the Wingdings \"translator\"!\n");
+    puts("Welcome to the Wingdings \"translator\"!");
     int user_choice = prompt_user_for_translator();
 
-    while (user_choice)
+    while (1)
     {
         const int return_status = user_choice ? translate_wingdings_to_eng() : translate_eng_to_wingdings();
         if (return_status == EXIT_STATUS_CODE)
