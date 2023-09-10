@@ -120,15 +120,13 @@ int translate_wingdings_to_eng(void)
     }
 }
 /*
- * Prompts the user for whether they want to translate from English to Wingdings, or from
- * Wingdings to English.
- * In the case of the former, this function returns CODE_ENGLISH_TO_WINGDINGSS.
- * In the case of the latter, this function returns CODE_WINGDINGS_TO_ENGLISH.
+ * Prompts the user for the translator they want to use.
+ * This function will return either CODE_ENGLISH_TO_WINGDINGS, or CODE_WINGDINGS_TO_ENGLISH.
  *
  * If the user inputs something invalid, the function will prompt the user again until they input
  * something valid.
  */
-int prompt_user_for_use_case(void)
+int prompt_user_for_translator(void)
 {
     puts("What would you like to translate?");
     puts("0. Translate English-to-Wingdings");
@@ -150,16 +148,17 @@ int main(void)
 {
     puts(wingdings[9]);
     fopen_s(&output_file, OUTPUT_FILENAME, "rw");
+
     puts("Welcome to the Wingdings \"translator\"!\n");
-    int user_choice = prompt_user_for_use_case();
+    int user_choice = prompt_user_for_translator();
 
     while (user_choice)
     {
         const int return_status = user_choice ? translate_wingdings_to_eng() : translate_eng_to_wingdings();
         if (return_status == EXIT_STATUS_CODE)
-            return 0;
+            break;
         else
-            user_choice = prompt_user_for_use_case();
+            user_choice = prompt_user_for_translator();
     }
 
     return 0;
