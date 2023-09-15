@@ -4,10 +4,7 @@
 #include <limits.h>
 #include "MyBasics.h"
 
-#define NUM_WINGDINGS (94)
-// The maximum size of one Wingdings "character" in bytes
-// (they're represented as strings, so this includes a null terminator)
-#define MAX_WINGDINGS_CHAR_SIZE (sizeof(wingdings) / NUM_WINGDING_CHARS)
+#define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
 #define ENG_TO_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
 
@@ -29,8 +26,7 @@
 #define CHANGE_TRANSLATOR_KEYWORD "!chg"
 #define CHANGE_TRANSLATOR_STATUS_CODE (1)
 
-// ASCII mapped to their respective Wingding representation.
-// Used to translate from ASCII to Wingdings.
+// ASCII characters mapped to their respective Wingdings representation.
 static const char *wingdings[] = {
     // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 total)
     "✏︎", "✂︎", "✁︎", "👓︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "✆︎", "🖂︎", "🖃︎", "📪︎",
@@ -62,9 +58,9 @@ static const char *wingdings[] = {
 static FILE *output_file = NULL;
 
 /*
- * Container function for the translation loop
- * This function will prompt the user for English characters to be converted
- * into their respective Wingdings counterpart(s)
+ * This function will prompt the user for English characters to be converted into
+ * their respective Wingdings counterpart(s).
+ * 
  * If no equivalent exists, the entered character will remain in the output.
  *
  * If EXIT_KEYWORD or CHANGE_TRANSLATOR_KEYWORD are entered, this function will
@@ -100,8 +96,8 @@ int translate_eng_to_wingdings(void)
          * rather that the number of valid Wingdings is equivalent to the number of ASCII characters
          * offset by '!' (33).
          *
-         * Thus, using the array to translate an ASCII character to Wingdings requires you to
-         * take the character's value and offset it by negative 33 (-33).
+         * Thus, using the array to translate an ASCII character to Wingdings requires you to use the
+         * difference between the ASCII character's value and '!' (33).
          *
          * An example being the letter 'e' (value 101) which translates to '♏︎' (wingdings[68]) in Wingdings.
          * In order to get the Wingdings equivalent, you'd need to write something like the following:
@@ -114,7 +110,7 @@ int translate_eng_to_wingdings(void)
          */
         for (size_t i = 0; i < SIZEOF_INPUT; i++)
         {
-            const char current_char = input[i];
+            const unsigned char current_char = input[i];
             if (current_char < ENG_TO_WINGDINGS_OFFSET)
             {
                 fputc(current_char, output_file);
