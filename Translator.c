@@ -21,10 +21,10 @@
 // Regular words like "exit" could be legitimate user input for instance.
 
 #define EXIT_KEYWORD "!exit"
-#define EXIT_STATUS_CODE (0)
+#define EXIT_STATUS_CODE (10)
 
 #define CHANGE_TRANSLATOR_KEYWORD "!chg"
-#define CHANGE_TRANSLATOR_STATUS_CODE (1)
+#define CHANGE_TRANSLATOR_STATUS_CODE (11)
 
 // ASCII characters mapped to their respective Wingdings representation.
 static const char *wingdings[] = {
@@ -57,10 +57,21 @@ static const char *wingdings[] = {
 
 static FILE *output_file = NULL;
 
+inline int check_if_str_is_keyword(const char *str)
+{
+    if (str == NULL)
+        return -1;
+    else if (strcasecmp(str, EXIT_KEYWORD) == 0)
+        return EXIT_STATUS_CODE;
+    else if (strcasecmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
+        return CHANGE_TRANSLATOR_STATUS_CODE;
+    return 0;
+}
+
 /*
  * This function will prompt the user for English characters to be converted into
  * their respective Wingdings counterpart(s).
- * 
+ *
  * If no equivalent exists, the entered character will remain in the output.
  *
  * If EXIT_KEYWORD or CHANGE_TRANSLATOR_KEYWORD are entered, this function will
@@ -81,12 +92,11 @@ int translate_eng_to_wingdings(void)
         // which isn't needed
         const size_t SIZEOF_INPUT = getStrStdin(&input, MAX_BYTE_READS) - 1;
 
-        if (input == NULL)
+        const int is_keyword = check_if_str_is_keyword(input);
+        if (is_keyword == -1)
             continue;
-        if (strcasecmp(input, EXIT_KEYWORD) == 0)
-            return EXIT_STATUS_CODE;
-        if (strcasecmp(input, CHANGE_TRANSLATOR_KEYWORD) == 0)
-            return CHANGE_TRANSLATOR_STATUS_CODE;
+        if (is_keyword != 0)
+            return is_keyword;
 
         /*
          * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126),
@@ -146,12 +156,11 @@ int translate_wingdings_to_eng(void)
         printf("Enter Wingdings here: ");
         getStrStdin(&input, MAX_BYTE_READS);
 
-        if (input == NULL)
+        const int is_keyword = check_if_str_is_keyword(input);
+        if (is_keyword == -1)
             continue;
-        if (strcasecmp(input, EXIT_KEYWORD) == 0)
-            return EXIT_STATUS_CODE;
-        if (strcasecmp(input, CHANGE_TRANSLATOR_KEYWORD) == 0)
-            return CHANGE_TRANSLATOR_STATUS_CODE;
+        if (is_keyword != 0)
+            return is_keyword;
     }
 }
 /*
@@ -181,8 +190,8 @@ int prompt_user_for_translator(void)
 
 int main(void)
 {
-    fopen_s(&output_file, OUTPUT_FILENAME, "a");
 
+    fopen_s(&output_file, OUTPUT_FILENAME, "w");
     if (!output_file)
     {
         fputs("Could not open output file", stderr);
@@ -197,7 +206,7 @@ int main(void)
         const int return_status = user_choice ? translate_wingdings_to_eng() : translate_eng_to_wingdings();
         if (return_status == EXIT_STATUS_CODE)
             break;
-        else
+        else if (return_status == CHANGE_TRANSLATOR_STATUS_CODE)
             user_choice = prompt_user_for_translator();
         fflush(output_file);
     }
