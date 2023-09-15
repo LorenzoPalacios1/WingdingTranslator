@@ -57,6 +57,8 @@ static const char *wingdings[] = {
 
 static FILE *output_file = NULL;
 
+static char *input = NULL;
+
 inline int check_if_str_is_keyword(const char *str)
 {
     if (str == NULL)
@@ -85,12 +87,11 @@ int translate_eng_to_wingdings(void)
         EXIT_KEYWORD, CHANGE_TRANSLATOR_KEYWORD);
     while (1)
     {
-        char *input = NULL;
         printf("Enter English here: ");
 
         // "- 1" since getStrStdin() returns the string's length including the null terminator,
-        // which isn't needed
-        const size_t SIZEOF_INPUT = getStrStdin(&input, MAX_BYTE_READS) - 1;
+        // which isn't needed in this case
+        const size_t INPUT_LEN = getStrStdin(&input, MAX_BYTE_READS) - 1;
 
         const int is_keyword = check_if_str_is_keyword(input);
         if (is_keyword == -1)
@@ -118,7 +119,7 @@ int translate_eng_to_wingdings(void)
          *
          * > "wingdings['e' - 33]"
          */
-        for (size_t i = 0; i < SIZEOF_INPUT; i++)
+        for (size_t i = 0; i < INPUT_LEN; i++)
         {
             const unsigned char current_char = input[i];
             if (current_char < ENG_TO_WINGDINGS_OFFSET)
@@ -152,15 +153,33 @@ int translate_wingdings_to_eng(void)
         EXIT_KEYWORD, CHANGE_TRANSLATOR_KEYWORD);
     while (1)
     {
-        char *input = NULL;
         printf("Enter Wingdings here: ");
-        getStrStdin(&input, MAX_BYTE_READS);
+        const size_t INPUT_LEN = getStrStdin(&input, MAX_BYTE_READS);
 
         const int is_keyword = check_if_str_is_keyword(input);
         if (is_keyword == -1)
             continue;
         if (is_keyword != 0)
             return is_keyword;
+
+        // We split the input into 8-byte keys as that's the largest possible Wingdings "character",
+        // so we need to add some padding bytes if the number of bytes in the input is not divisible by 8
+        const size_t number_of_pad_bytes = INPUT_LEN % sizeof(*wingdings);
+        for (size_t i = INPUT_LEN; i < INPUT_LEN + number_of_pad_bytes; i++)
+            input[i] = '\0';
+
+        for (size_t i = 0; i < INPUT_LEN; i += sizeof(*wingdings))
+        {
+            const char *input_substr = input + i;
+
+            for (size_t j = 0; j < NUM_WINGDINGS; j++)
+            {
+                const char *current_wingdings = wingdings[i];
+                if (strncmp(current_wingdings, input_substr, strlen(current_wingdings)) == 0){
+                    puts("found");
+                }
+            }
+        }
     }
 }
 /*
@@ -190,12 +209,19 @@ int prompt_user_for_translator(void)
 
 int main(void)
 {
-
     fopen_s(&output_file, OUTPUT_FILENAME, "w");
     if (!output_file)
     {
         fputs("Could not open output file", stderr);
         return 1;
+    }
+
+    // "+ 1" to account for a null terminator
+    input = malloc(MAX_BYTE_READS + 1);
+    if (!input)
+    {
+        fputs("Could not allocate memory for input", stderr);
+        return 2;
     }
 
     puts("Welcome to the Wingdings \"translator\"!");
