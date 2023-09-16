@@ -14,6 +14,11 @@
 #define WINGDINGS_TO_ENG_OUTPUT_FILENAME "WingdingsToEnglish.txt"
 #define ENG_TO_WINGDINGS_OUTPUT_FILENAME "EnglishToWingdings.txt"
 
+#define ENG_OUTPUT output_files[0]
+#define WINGDINGS_OUTPUT output_files[1]
+
+#define SHOULD_CLEAR_OUTPUT_FILES (1)
+
 // The maximum number of bytes to read from one line of input.
 #define MAX_BYTE_READS (1000)
 
@@ -56,12 +61,13 @@ static const char *wingdings[] = {
     // Symbols 4 ({, |, }, ~) (4 total)
     "❀︎", "✿︎", "❝︎", "❞︎"};
 
-static FILE *english_output_file = NULL;
-static FILE *wingdings_output_file = NULL;
+// output_files[0] is the ENGLISH OUTPUT FILE
+// output_files[1] is the WINGDINGS OUTPUT FILE
+static FILE *output_files[] = {NULL, NULL};
 
 static char *input = NULL;
 
-inline int check_if_str_is_keyword(const char *str)
+inline int check_if_str_is_keyword(const char *const str)
 {
     if (str == NULL)
         return -1;
@@ -128,15 +134,15 @@ int translate_eng_to_wingdings(void)
             const unsigned char current_char = input[i];
             if (current_char < ENG_TO_WINGDINGS_OFFSET)
             {
-                fputc(current_char, english_output_file);
+                fputc(current_char, ENG_OUTPUT);
             }
             else
             {
-                fprintf(english_output_file, wingdings[input[i] - ENG_TO_WINGDINGS_OFFSET]);
+                fprintf(ENG_OUTPUT, wingdings[input[i] - ENG_TO_WINGDINGS_OFFSET]);
             }
         }
-        fputc('\n', english_output_file);
-        fflush(english_output_file);
+        fputc('\n', ENG_OUTPUT);
+        fflush(ENG_OUTPUT);
     }
 }
 
@@ -215,28 +221,28 @@ int prompt_user_for_translator(void)
     return user_choice;
 }
 
-// Returns 1, true, if the output files are open to somewhere
+// Returns 1, true, if the output files are open.
+// Returns 0 otherwise.
 int ensure_validity_of_output_files(void)
 {
-    printf("%d\n", english_output_file->_flag);
+    if (!ENG_OUTPUT)
+    {
+        fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
+        return 0;
+    }
+    if (!WINGDINGS_OUTPUT)
+    {
+        fputs("Could not open output file (" WINGDINGS_TO_ENG_OUTPUT_FILENAME ")\n", stderr);
+        return 0;
+    }
 
-    if (!english_output_file)
-    {
-        fprintf(stderr, "Could not open output file (%s)\n", ENG_TO_WINGDINGS_OUTPUT_FILENAME);
-        return 0;
-    }
-    if (!wingdings_output_file)
-    {
-        fprintf(stderr, "Could not open output file (%s)\n", WINGDINGS_TO_ENG_OUTPUT_FILENAME);
-        return 0;
-    }
     return 1;
 }
 
 int main(void)
 {
-    fopen_s(&english_output_file, WINGDINGS_TO_ENG_OUTPUT_FILENAME, "a");
-    fopen_s(&wingdings_output_file, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
+    fopen_s(&ENG_OUTPUT, WINGDINGS_TO_ENG_OUTPUT_FILENAME, "a");
+    fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
 
     {
         const int are_files_valid = ensure_validity_of_output_files();
