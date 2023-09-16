@@ -11,7 +11,8 @@
 #define CODE_ENGLISH_TO_WINGDINGS (0)
 #define CODE_WINGDINGS_TO_ENGLISH (1)
 
-#define OUTPUT_FILENAME "out.txt"
+#define WINGDINGS_TO_ENG_OUTPUT_FILENAME "WingdingsToEnglish.txt"
+#define ENG_TO_WINGDINGS_OUTPUT_FILENAME "EnglishToWingdings.txt"
 
 // The maximum number of bytes to read from one line of input.
 #define MAX_BYTE_READS (1000)
@@ -55,7 +56,8 @@ static const char *wingdings[] = {
     // Symbols 4 ({, |, }, ~) (4 total)
     "❀︎", "✿︎", "❝︎", "❞︎"};
 
-static FILE *output_file = NULL;
+static FILE *english_output_file = NULL;
+static FILE *wingdings_output_file = NULL;
 
 static char *input = NULL;
 
@@ -93,11 +95,13 @@ int translate_eng_to_wingdings(void)
         // which isn't needed in this case
         const size_t INPUT_LEN = getStrStdin(&input, MAX_BYTE_READS) - 1;
 
-        const int is_keyword = check_if_str_is_keyword(input);
-        if (is_keyword == -1)
-            continue;
-        if (is_keyword != 0)
-            return is_keyword;
+        {
+            const int is_keyword = check_if_str_is_keyword(input);
+            if (is_keyword == -1)
+                continue;
+            if (is_keyword != 0)
+                return is_keyword;
+        }
 
         /*
          * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126),
@@ -124,15 +128,15 @@ int translate_eng_to_wingdings(void)
             const unsigned char current_char = input[i];
             if (current_char < ENG_TO_WINGDINGS_OFFSET)
             {
-                fputc(current_char, output_file);
+                fputc(current_char, english_output_file);
             }
             else
             {
-                fprintf(output_file, wingdings[input[i] - ENG_TO_WINGDINGS_OFFSET]);
+                fprintf(english_output_file, wingdings[input[i] - ENG_TO_WINGDINGS_OFFSET]);
             }
         }
-        fputc('\n', output_file);
-        fflush(output_file);
+        fputc('\n', english_output_file);
+        fflush(english_output_file);
     }
 }
 
@@ -153,20 +157,23 @@ int translate_wingdings_to_eng(void)
         EXIT_KEYWORD, CHANGE_TRANSLATOR_KEYWORD);
     while (1)
     {
-        printf("Enter Wingdings here: ");
+        printf("Enter the name of a file containing Wingdings: ");
         const size_t INPUT_LEN = getStrStdin(&input, MAX_BYTE_READS);
-
-        const int is_keyword = check_if_str_is_keyword(input);
-        if (is_keyword == -1)
-            continue;
-        if (is_keyword != 0)
-            return is_keyword;
+        {
+            const int is_keyword = check_if_str_is_keyword(input);
+            if (is_keyword == -1)
+                continue;
+            if (is_keyword != 0)
+                return is_keyword;
+        }
 
         // We split the input into 8-byte keys as that's the largest possible Wingdings "character",
         // so we need to add some padding bytes if the number of bytes in the input is not divisible by 8
-        const size_t number_of_pad_bytes = INPUT_LEN % sizeof(*wingdings);
-        for (size_t i = INPUT_LEN; i < INPUT_LEN + number_of_pad_bytes; i++)
-            input[i] = '\0';
+        {
+            const size_t number_of_pad_bytes = INPUT_LEN % sizeof(*wingdings);
+            for (size_t i = INPUT_LEN; i < INPUT_LEN + number_of_pad_bytes; i++)
+                input[i] = '\0';
+        }
 
         for (size_t i = 0; i < INPUT_LEN; i += sizeof(*wingdings))
         {
@@ -175,7 +182,8 @@ int translate_wingdings_to_eng(void)
             for (size_t j = 0; j < NUM_WINGDINGS; j++)
             {
                 const char *current_wingdings = wingdings[i];
-                if (strncmp(current_wingdings, input_substr, strlen(current_wingdings)) == 0){
+                if (strncmp(current_wingdings, input_substr, strlen(current_wingdings)) == 0)
+                {
                     puts("found");
                 }
             }
@@ -207,13 +215,33 @@ int prompt_user_for_translator(void)
     return user_choice;
 }
 
+// Returns 1, true, if the output files are open to somewhere
+int ensure_validity_of_output_files(void)
+{
+    printf("%d\n", english_output_file->_flag);
+
+    if (!english_output_file)
+    {
+        fprintf(stderr, "Could not open output file (%s)\n", ENG_TO_WINGDINGS_OUTPUT_FILENAME);
+        return 0;
+    }
+    if (!wingdings_output_file)
+    {
+        fprintf(stderr, "Could not open output file (%s)\n", WINGDINGS_TO_ENG_OUTPUT_FILENAME);
+        return 0;
+    }
+    return 1;
+}
+
 int main(void)
 {
-    fopen_s(&output_file, OUTPUT_FILENAME, "w");
-    if (!output_file)
+    fopen_s(&english_output_file, WINGDINGS_TO_ENG_OUTPUT_FILENAME, "a");
+    fopen_s(&wingdings_output_file, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
+
     {
-        fputs("Could not open output file", stderr);
-        return 1;
+        const int are_files_valid = ensure_validity_of_output_files();
+        if (!are_files_valid)
+            return are_files_valid;
     }
 
     // "+ 1" to account for a null terminator
@@ -224,19 +252,20 @@ int main(void)
         return 2;
     }
 
-    puts("Welcome to the Wingdings \"translator\"!");
-    int user_choice = prompt_user_for_translator();
-
-    while (1)
     {
-        const int return_status = user_choice ? translate_wingdings_to_eng() : translate_eng_to_wingdings();
-        if (return_status == EXIT_STATUS_CODE)
-            break;
-        else if (return_status == CHANGE_TRANSLATOR_STATUS_CODE)
-            user_choice = prompt_user_for_translator();
-        fflush(output_file);
+        puts("Welcome to the Wingdings \"translator\"!");
+        int user_choice = prompt_user_for_translator();
+
+        while (1)
+        {
+            const int return_status = user_choice ? translate_wingdings_to_eng() : translate_eng_to_wingdings();
+            if (return_status == EXIT_STATUS_CODE)
+                break;
+            else if (return_status == CHANGE_TRANSLATOR_STATUS_CODE)
+                user_choice = prompt_user_for_translator();
+        }
     }
-    fclose(output_file);
+    _fcloseall();
 
     return 0;
 }
