@@ -78,6 +78,48 @@ inline int check_if_str_is_keyword(const char *const str)
     return 0;
 }
 
+char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_strlen)
+{
+    
+    /*
+     * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126),
+     * and nothing else.
+     *
+     * In other words, this means that the Wingdings equivalent for '!' is located at wingdings[0].
+     * Thus, the number of valid Wingdings is equivalent to the number of ASCII characters
+     * offset by '!' (33).
+     *
+     * Thus, using the array to translate an ASCII character to Wingdings requires you to use the
+     * difference between the ASCII character's value and '!' (33).
+     *
+     * An example being the letter 'e' (value 101) which translates to '♏︎' (wingdings[68]) in Wingdings.
+     * In order to get the Wingdings equivalent, you'd need to write something like the following:
+     *
+     * > "wingdings['e' - '!']"
+     *
+     * ...or...
+     *
+     * > "wingdings['e' - 33]"
+     */
+    static char buffer[1024];
+    size_t buffer_i = 0;
+    for (size_t i = 0; i < ascii_strlen; i++)
+    {
+        const unsigned char current_char = ascii_str[i];
+        if (current_char < ENG_TO_WINGDINGS_OFFSET)
+            buffer[buffer_i++] = current_char;
+        else
+        {
+            const char *wingdings_char = wingdings[current_char - ENG_TO_WINGDINGS_OFFSET];
+            const size_t wingdings_char_len = strlen(wingdings_char);
+            strcat_s(buffer, wingdings_char_len, wingdings_char);
+            buffer_i += wingdings_char_len;
+        }
+    }
+    buffer[buffer_i] = '\0';
+    return buffer;
+}
+
 /*
  * This function will prompt the user for English characters to be converted into
  * their respective Wingdings counterpart(s).
@@ -89,13 +131,15 @@ inline int check_if_str_is_keyword(const char *const str)
  */
 int translate_eng_to_wingdings(void)
 {
-    printf(
+    puts(
         "The selected translator is English-to-Wingdings\n"
-        "Enter \"%s\" to quit, or \"%s\" to switch translators\n",
-        EXIT_KEYWORD, CHANGE_TRANSLATOR_KEYWORD);
+        "Enter \"" EXIT_KEYWORD "\" to quit, or \"" CHANGE_TRANSLATOR_KEYWORD "\" to switch translators"
+        );
     while (1)
     {
-        printf("Enter English here: ");
+        // Using fputs() instead of puts() since puts() appends a newline, and I want the user's
+        // input to be on the same line as the "Enter English here: " prompt.
+        fputs("Enter English here: ", stdout);
 
         // "- 1" since getStrStdin() returns the string's length including the null terminator,
         // which isn't needed in this case
@@ -108,45 +152,14 @@ int translate_eng_to_wingdings(void)
             if (is_keyword != 0)
                 return is_keyword;
         }
-
-        /*
-         * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126),
-         * and nothing else.
-         *
-         * In other words, this means that the Wingdings equivalent for '!' is located at index 0, or
-         * rather that the number of valid Wingdings is equivalent to the number of ASCII characters
-         * offset by '!' (33).
-         *
-         * Thus, using the array to translate an ASCII character to Wingdings requires you to use the
-         * difference between the ASCII character's value and '!' (33).
-         *
-         * An example being the letter 'e' (value 101) which translates to '♏︎' (wingdings[68]) in Wingdings.
-         * In order to get the Wingdings equivalent, you'd need to write something like the following:
-         *
-         * > "wingdings['e' - '!']"
-         *
-         * ...or...
-         *
-         * > "wingdings['e' - 33]"
-         */
-        for (size_t i = 0; i < INPUT_LEN; i++)
-        {
-            const unsigned char current_char = input[i];
-            if (current_char < ENG_TO_WINGDINGS_OFFSET)
-            {
-                fputc(current_char, ENG_OUTPUT);
-            }
-            else
-            {
-                fprintf(ENG_OUTPUT, wingdings[input[i] - ENG_TO_WINGDINGS_OFFSET]);
-            }
-        }
+        fputs(convert_ascii_str_to_wingdings(input, INPUT_LEN), ENG_OUTPUT);
         fputc('\n', ENG_OUTPUT);
-        fflush(ENG_OUTPUT);
     }
 }
 
 /*
+ * - WORK IN PROGRESS -
+ *
  * Container function for the translation loop
  * This function will prompt the user for Wingdings characters to be converted
  * into English characters, if possible.
@@ -223,8 +236,11 @@ int prompt_user_for_translator(void)
 
 // Returns 1, true, if the output files are open.
 // Returns 0 otherwise.
-int ensure_validity_of_output_files(void)
+int open_output_files(void)
 {
+    fopen_s(&ENG_OUTPUT, WINGDINGS_TO_ENG_OUTPUT_FILENAME, "a");
+    fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
+
     if (!ENG_OUTPUT)
     {
         fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
@@ -241,11 +257,8 @@ int ensure_validity_of_output_files(void)
 
 int main(void)
 {
-    fopen_s(&ENG_OUTPUT, WINGDINGS_TO_ENG_OUTPUT_FILENAME, "a");
-    fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
-
     {
-        const int are_files_valid = ensure_validity_of_output_files();
+        const int are_files_valid = open_output_files();
         if (!are_files_valid)
             return are_files_valid;
     }
