@@ -33,7 +33,7 @@
 #define CHANGE_TRANSLATOR_STATUS_CODE (11)
 
 // ASCII characters mapped to their respective Wingdings representation.
-static const char *wingdings[] = {
+static const char *const wingdings[] = {
     // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 total)
     "✏︎", "✂︎", "✁︎", "👓︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "✆︎", "🖂︎", "🖃︎", "📪︎",
     "📫︎", "📬︎", "📭︎",
@@ -67,20 +67,9 @@ static FILE *output_files[] = {NULL, NULL};
 
 static char *input = NULL;
 
-inline int check_if_str_is_keyword(const char *const str)
-{
-    if (str == NULL)
-        return -1;
-    else if (strcasecmp(str, EXIT_KEYWORD) == 0)
-        return EXIT_STATUS_CODE;
-    else if (strcasecmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
-        return CHANGE_TRANSLATOR_STATUS_CODE;
-    return 0;
-}
-
 char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_strlen)
 {
-    
+
     /*
      * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126),
      * and nothing else.
@@ -110,7 +99,7 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
             buffer[buffer_i++] = current_char;
         else
         {
-            const char *wingdings_char = wingdings[current_char - ENG_TO_WINGDINGS_OFFSET];
+            const char *const wingdings_char = wingdings[current_char - ENG_TO_WINGDINGS_OFFSET];
             const size_t wingdings_char_len = strlen(wingdings_char);
             strcat_s(buffer, wingdings_char_len, wingdings_char);
             buffer_i += wingdings_char_len;
@@ -118,6 +107,17 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
     }
     buffer[buffer_i] = '\0';
     return buffer;
+}
+
+inline int check_if_str_is_keyword(const char *const str)
+{
+    if (str == NULL)
+        return -1;
+    else if (strcasecmp(str, EXIT_KEYWORD) == 0)
+        return EXIT_STATUS_CODE;
+    else if (strcasecmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
+        return CHANGE_TRANSLATOR_STATUS_CODE;
+    return 0;
 }
 
 /*
@@ -133,8 +133,7 @@ int translate_eng_to_wingdings(void)
 {
     puts(
         "The selected translator is English-to-Wingdings\n"
-        "Enter \"" EXIT_KEYWORD "\" to quit, or \"" CHANGE_TRANSLATOR_KEYWORD "\" to switch translators"
-        );
+        "Enter \"" EXIT_KEYWORD "\" to quit, or \"" CHANGE_TRANSLATOR_KEYWORD "\" to switch translators");
     while (1)
     {
         // Using fputs() instead of puts() since puts() appends a newline, and I want the user's
@@ -144,7 +143,6 @@ int translate_eng_to_wingdings(void)
         // "- 1" since getStrStdin() returns the string's length including the null terminator,
         // which isn't needed in this case
         const size_t INPUT_LEN = getStrStdin(&input, MAX_BYTE_READS) - 1;
-
         {
             const int is_keyword = check_if_str_is_keyword(input);
             if (is_keyword == -1)
@@ -152,7 +150,10 @@ int translate_eng_to_wingdings(void)
             if (is_keyword != 0)
                 return is_keyword;
         }
-        fputs(convert_ascii_str_to_wingdings(input, INPUT_LEN), ENG_OUTPUT);
+        const char *const wingding_str = convert_ascii_str_to_wingdings(input, INPUT_LEN);
+        puts(wingding_str);
+        printf("%llu\n", strlen(wingding_str));
+        // fputs(, ENG_OUTPUT);
         fputc('\n', ENG_OUTPUT);
     }
 }
@@ -196,11 +197,11 @@ int translate_wingdings_to_eng(void)
 
         for (size_t i = 0; i < INPUT_LEN; i += sizeof(*wingdings))
         {
-            const char *input_substr = input + i;
+            const char *const input_substr = input + i;
 
             for (size_t j = 0; j < NUM_WINGDINGS; j++)
             {
-                const char *current_wingdings = wingdings[i];
+                const char *const current_wingdings = wingdings[i];
                 if (strncmp(current_wingdings, input_substr, strlen(current_wingdings)) == 0)
                 {
                     puts("found");
