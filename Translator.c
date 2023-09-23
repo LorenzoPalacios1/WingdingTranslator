@@ -20,7 +20,7 @@
 #define SHOULD_CLEAR_OUTPUT_FILES (1)
 
 // The maximum number of bytes to read from one line of input.
-#define MAX_BYTE_READS (1000)
+#define MAX_BYTE_READS (1024)
 
 // Preferably keep the below keywords unique enough so that they won't
 // interfere with normal input when the translator picks up input.
@@ -90,7 +90,7 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
      *
      * > "wingdings['e' - 33]"
      */
-    static char buffer[1024];
+    static char buffer[MAX_BYTE_READS];
     size_t buffer_i = 0;
     for (size_t i = 0; i < ascii_strlen; i++)
     {
@@ -115,11 +115,29 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
     return buffer;
 }
 
-char *convert_wingdings_to_ascii(const char *const wingdings, const size_t size_of_wingdings)
+char *convert_wingdings_to_ascii(const char *const wingdings_to_translate, const size_t size_of_wingdings)
 {
-    
-}
+    // We split the input into 8-byte keys as that's the largest possible Wingdings "character",
+    // so we need to add some padding bytes if the number of bytes in the input is not divisible by 8
+    static char buffer[MAX_BYTE_READS];
+    for (size_t i = 0; i < size_of_wingdings; i += sizeof(*wingdings))
+    {
+        const char *const substr = wingdings_to_translate + i;
 
+        // The wingdings themselves are comprised of varying amounts of bytes, so instead I decided
+        // to scan for specific starting bytes and ending bytes to help segment the input
+        switch ((unsigned long long)substr[0])
+        {
+        case 0xffffffffffffffe2:
+            break;
+        case 0xfffffffffffffff0:
+            break;
+        case 0xffffffffffffffe0:
+            break;
+        }
+    }
+    return buffer;
+}
 inline int check_if_str_is_keyword(const char *const str)
 {
     if (str == NULL)
@@ -179,10 +197,9 @@ int translate_eng_to_wingdings(void)
  */
 int translate_wingdings_to_eng(void)
 {
-    printf(
-        "The selected translator is Wingdings-to-English\n"
-        "Enter \"%s\" to quit, or \"%s\" to switch translators\n",
-        EXIT_KEYWORD, CHANGE_TRANSLATOR_KEYWORD);
+    puts(
+        "The selected translator is Wingding-to-English\n"
+        "Enter \"" EXIT_KEYWORD "\" to quit, or \"" CHANGE_TRANSLATOR_KEYWORD "\" to switch translators");
     while (1)
     {
         printf("Enter the name of a file containing Wingdings: ");
@@ -201,20 +218,6 @@ int translate_wingdings_to_eng(void)
             const size_t number_of_pad_bytes = INPUT_LEN % sizeof(*wingdings);
             for (size_t i = INPUT_LEN; i < INPUT_LEN + number_of_pad_bytes; i++)
                 input[i] = '\0';
-        }
-
-        for (size_t i = 0; i < INPUT_LEN; i += sizeof(*wingdings))
-        {
-            const char *const input_substr = input + i;
-
-            for (size_t j = 0; j < NUM_WINGDINGS; j++)
-            {
-                const char *const current_wingdings = wingdings[i];
-                if (strncmp(current_wingdings, input_substr, strlen(current_wingdings)) == 0)
-                {
-                    puts("found");
-                }
-            }
         }
     }
 }
@@ -272,6 +275,29 @@ int open_output_files(void)
     return 1;
 }
 
+// Usually used to examine the bytes that comprise each Wingdings character.
+void print_wingdings(void)
+{
+    for (size_t i = 0; i < NUM_WINGDINGS; i++)
+    {
+        const char *const item = wingdings[i];
+        fputs(wingdings[i], WINGDINGS_OUTPUT);
+        fputc(':', WINGDINGS_OUTPUT);
+        fputc(' ', WINGDINGS_OUTPUT);
+
+        const size_t item_len = strlen(item);
+        switch ((unsigned long long)item[0])
+        {
+        case 0xffffffffffffffe2:
+        case 0xfffffffffffffff0:
+        case 0xffffffffffffffe0:
+            fprintf(WINGDINGS_OUTPUT, "first byte: 0x%p | last byte: 0x%p  | length %llu",
+                    (unsigned long long)item[0], (unsigned long long)item[item_len - 1], item_len);
+        }
+        fputc('\n', WINGDINGS_OUTPUT);
+    }
+}
+
 int main(void)
 {
     {
@@ -279,7 +305,8 @@ int main(void)
         if (!are_files_valid)
             return are_files_valid;
     }
-
+    print_wingdings();
+    return 0;
     // "+ 1" to account for a null terminator
     input = malloc(MAX_BYTE_READS + 1);
     if (!input)
