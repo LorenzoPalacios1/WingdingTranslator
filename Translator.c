@@ -78,7 +78,7 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
      * Thus, the number of valid Wingdings is equivalent to the number of ASCII characters
      * offset by '!' (33).
      *
-     * Thus, using the array to translate an ASCII character to Wingdings requires you to use the
+     * So, using the array to translate an ASCII character to Wingdings requires you to use the
      * difference between the ASCII character's value and '!' (33).
      *
      * An example being the letter 'e' (value 101) which translates to '♏︎' (wingdings[68]) in Wingdings.
@@ -101,12 +101,23 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
         {
             const char *const wingdings_char = wingdings[current_char - ENG_TO_WINGDINGS_OFFSET];
             const size_t wingdings_char_len = strlen(wingdings_char);
-            strcat_s(buffer, wingdings_char_len, wingdings_char);
+            strncpy_s(buffer + buffer_i, sizeof(buffer) - buffer_i, wingdings_char, wingdings_char_len);
             buffer_i += wingdings_char_len;
         }
+        if (buffer_i >= sizeof(buffer))
+        {
+            buffer_i = sizeof(buffer) - 1;
+            break;
+        }
     }
+
     buffer[buffer_i] = '\0';
     return buffer;
+}
+
+char *convert_wingdings_to_ascii(const char *const wingdings, const size_t size_of_wingdings)
+{
+    
 }
 
 inline int check_if_str_is_keyword(const char *const str)
@@ -150,10 +161,7 @@ int translate_eng_to_wingdings(void)
             if (is_keyword != 0)
                 return is_keyword;
         }
-        const char *const wingding_str = convert_ascii_str_to_wingdings(input, INPUT_LEN);
-        puts(wingding_str);
-        printf("%llu\n", strlen(wingding_str));
-        // fputs(, ENG_OUTPUT);
+        fputs(convert_ascii_str_to_wingdings(input, INPUT_LEN), ENG_OUTPUT);
         fputc('\n', ENG_OUTPUT);
     }
 }
@@ -239,8 +247,16 @@ int prompt_user_for_translator(void)
 // Returns 0 otherwise.
 int open_output_files(void)
 {
-    fopen_s(&ENG_OUTPUT, WINGDINGS_TO_ENG_OUTPUT_FILENAME, "a");
-    fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
+    if (SHOULD_CLEAR_OUTPUT_FILES)
+    {
+        fopen_s(&ENG_OUTPUT, WINGDINGS_TO_ENG_OUTPUT_FILENAME, "w");
+        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "w");
+    }
+    else
+    {
+        fopen_s(&ENG_OUTPUT, WINGDINGS_TO_ENG_OUTPUT_FILENAME, "a");
+        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
+    }
 
     if (!ENG_OUTPUT)
     {
