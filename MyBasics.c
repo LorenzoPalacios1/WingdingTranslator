@@ -247,12 +247,12 @@ int strToInt(const char *const str, int *const num)
         return ERRCODE_BAD_PTR;
     }
 
-    const size_t STR_SIZE = strlen(str);
+    const short STR_SIZE = strlen(str);
 
     // The expression below checks if there is a leading dash sign within the string which tells the
     // later parsing loop to ignore this character
     // Also used as a boolean to convert the resultant int to a negative if applicable
-    const unsigned short isNegative = (*str == '-');
+    const char isNegative = (*str == '-');
 
     // Preemptively handling a 0-length string or a single negative dash
     if (STR_SIZE == 0 || (STR_SIZE == 1 && isNegative))
@@ -264,7 +264,7 @@ int strToInt(const char *const str, int *const num)
     // than stopping function flow.
     // Otherwise, this would make things like "asd8327" valid, causing 'num' to equal 8327, but things like
     // "8327asd" would cause the function to terminate, leaving 'num' unchanged.
-    unsigned short endIndex = isNegative;
+    unsigned char endIndex = isNegative;
     while (endIndex < STR_SIZE && (str[endIndex] == '0' || !isNumerical(str[endIndex])))
     {
         if (!isNumerical(str[endIndex]))
@@ -298,8 +298,8 @@ int strToInt(const char *const str, int *const num)
     for (; i >= endIndex; i--)
     {
         // This value will only hold a single digit's worth since it calls charToInt(), hence the
-        // usage of 'short', however it could contain a negative value
-        const short currentNum = charToInt(str[i]);
+        // usage of 'char', however it could contain a negative value
+        const char currentNum = charToInt(str[i]);
 
         // We can skip any values of 0
         if (currentNum == '0')
@@ -355,7 +355,6 @@ int strToInt(const char *const str, int *const num)
     if (i == STR_SIZE - 1)
         return ERRCODE_GENERAL;
 
-    // Finally, we handle the negative sign if necessary
     if (isNegative)
         tempNum *= -1;
 

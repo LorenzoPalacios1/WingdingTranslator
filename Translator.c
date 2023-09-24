@@ -71,7 +71,6 @@ static char *input = NULL;
 
 char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_strlen)
 {
-
     /*
      * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126),
      * and nothing else.
@@ -123,29 +122,37 @@ char *convert_wingdings_to_ascii(const char *const wingdings_to_translate)
     // to scan for specific starting bytes and ending bytes to help segment the input
     static char buffer[MAX_BYTE_READS];
     size_t i = 0;
-    while (wingdings_to_translate[i] != '\0')
+    while (wingdings_to_translate[i] != '\0' && i < sizeof(buffer))
     {
-        switch ((unsigned long long)wingdings_to_translate[i])
+        switch (wingdings_to_translate[i])
         {
         // These two starting bytes are guaranteed to have a one specific ending byte, so I can just let
         // them flow downwards
-        case 0xffffffffffffffe0:
-        case 0xffffffffffffffe2:
-            int wingdings_singleton_last_byte_index = -1;
-            size_t j = WINGDINGS_CHAR_MAX_SIZE;
-            for (; j > i && wingdings_singleton_last_byte_index == -1; j--)
-            {
-
-            }
-            strncpy_s(buffer + i, sizeof(buffer), wingdings_to_translate + i, wingdings_singleton_last_byte_index);
-            i += wingdings_singleton_last_byte_index;
+        case (char)-30:
+        case (char)-16:
+        {
+            const char *wingdings_singleton_last_byte_pos = strchr(wingdings_to_translate, (char)-114);
+            const size_t singleton_size = wingdings_to_translate - wingdings_singleton_last_byte_pos;
+            strncpy_s(buffer + i, sizeof(buffer), wingdings_to_translate + i, singleton_size);
+            i += singleton_size;
+            puts("found");
             break;
-        case 0xfffffffffffffff0:
+        }
+        case (char)-32:
+        {
+            const char *wingdings_singleton_last_byte_pos = strchr(wingdings_to_translate, (char)-114);
+            const size_t singleton_size = wingdings_to_translate - wingdings_singleton_last_byte_pos;
+            strncpy_s(buffer + i, sizeof(buffer), wingdings_to_translate + i, singleton_size);
+            i += singleton_size;
+            puts("found");
+            break;
+        }
             break;
         default:
             buffer[i] = wingdings_to_translate[i];
         }
     }
+
     return buffer;
 }
 inline int check_if_str_is_keyword(const char *const str)
@@ -301,8 +308,8 @@ void print_wingdings(void)
         case 0xffffffffffffffe2:
         case 0xfffffffffffffff0:
         case 0xffffffffffffffe0:
-            fprintf(WINGDINGS_OUTPUT, "first byte: 0x%p | last byte: 0x%p  | length %llu",
-                    (unsigned long long)item[0], (unsigned long long)item[item_len - 1], item_len);
+            fprintf(WINGDINGS_OUTPUT, "first byte: %d | last byte: %d  | length %llu",
+                    (char)item[0], (char)item[item_len - 1], item_len);
         }
         fputc('\n', WINGDINGS_OUTPUT);
     }
