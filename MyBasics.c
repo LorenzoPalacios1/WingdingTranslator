@@ -147,22 +147,42 @@ inline size_t getStrStdin(char **str, const size_t length)
 }
 
 /* Returns the first index of the passed character within the passed string after
- * offset.
+ * (strlen(str) + offset).
  *
  * Returns -1 if the character is not present within the string.
  */
-int indexOf(const char *str, const char letter, const size_t offset)
+int indexOf(const char *const str, const char letter, const size_t offset)
 {
     const size_t LENGTH_OF_STR = strlen(str);
-    // Ensuring offset is valid
     if (offset > LENGTH_OF_STR)
     {
         fprintf(stderr, "\nindexOf(): Invalid offset (%llu) for passed string; No reading occurred\n", offset);
         return -1;
     }
 
-    // Searching through the string for the character
-    for (size_t i = offset; i < LENGTH_OF_STR && str[i] != '\0'; i++)
+    for (size_t i = offset; i < LENGTH_OF_STR; i++)
+    {
+        if (str[i] == letter)
+            return i;
+    }
+    return -1;
+}
+
+/* Returns the last index of the passed character within the passed string before
+ * (strlen(str) - offset).
+ *
+ * Returns -1 if the character is not present within the string.
+ */
+int lastIndexOf(const char *const str, const char letter, const size_t offset)
+{
+    const size_t LENGTH_OF_STR = strlen(str);
+    if (offset > LENGTH_OF_STR)
+    {
+        fprintf(stderr, "\nindexOf(): Invalid offset (%llu) for passed string; No reading occurred\n", offset);
+        return -1;
+    }
+
+    for (size_t i = LENGTH_OF_STR - offset; i > 0; i--)
     {
         if (str[i] == letter)
             return i;
@@ -218,7 +238,7 @@ inline short charToInt(const char num)
  * If this function fails, such as via invalid characters or overflow, 'num' will be left
  * unchanged and ERRCODE_GENERAL will be returned.
  */
-int strToInt(const char *str, int *num)
+int strToInt(const char *const str, int *const num)
 {
     // Validating the string's existence
     if (str == NULL)
@@ -227,8 +247,7 @@ int strToInt(const char *str, int *num)
         return ERRCODE_BAD_PTR;
     }
 
-    // We can use shorts because the length of str should be no longer than INT_MAX_CHARS
-    const unsigned short STR_SIZE = strlen(str);
+    const size_t STR_SIZE = strlen(str);
 
     // The expression below checks if there is a leading dash sign within the string which tells the
     // later parsing loop to ignore this character

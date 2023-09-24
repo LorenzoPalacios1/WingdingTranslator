@@ -6,6 +6,8 @@
 
 #define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
+#define WINGDINGS_CHAR_MAX_SIZE (sizeof(*wingdings))
+
 #define ENG_TO_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
 
 #define CODE_ENGLISH_TO_WINGDINGS (0)
@@ -115,25 +117,33 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
     return buffer;
 }
 
-char *convert_wingdings_to_ascii(const char *const wingdings_to_translate, const size_t size_of_wingdings)
+char *convert_wingdings_to_ascii(const char *const wingdings_to_translate)
 {
-    // We split the input into 8-byte keys as that's the largest possible Wingdings "character",
-    // so we need to add some padding bytes if the number of bytes in the input is not divisible by 8
+    // The wingdings themselves are comprised of varying amounts of bytes, so instead I decided
+    // to scan for specific starting bytes and ending bytes to help segment the input
     static char buffer[MAX_BYTE_READS];
-    for (size_t i = 0; i < size_of_wingdings; i += sizeof(*wingdings))
+    size_t i = 0;
+    while (wingdings_to_translate[i] != '\0')
     {
-        const char *const substr = wingdings_to_translate + i;
-
-        // The wingdings themselves are comprised of varying amounts of bytes, so instead I decided
-        // to scan for specific starting bytes and ending bytes to help segment the input
-        switch ((unsigned long long)substr[0])
+        switch ((unsigned long long)wingdings_to_translate[i])
         {
+        // These two starting bytes are guaranteed to have a one specific ending byte, so I can just let
+        // them flow downwards
+        case 0xffffffffffffffe0:
         case 0xffffffffffffffe2:
+            int wingdings_singleton_last_byte_index = -1;
+            size_t j = WINGDINGS_CHAR_MAX_SIZE;
+            for (; j > i && wingdings_singleton_last_byte_index == -1; j--)
+            {
+
+            }
+            strncpy_s(buffer + i, sizeof(buffer), wingdings_to_translate + i, wingdings_singleton_last_byte_index);
+            i += wingdings_singleton_last_byte_index;
             break;
         case 0xfffffffffffffff0:
             break;
-        case 0xffffffffffffffe0:
-            break;
+        default:
+            buffer[i] = wingdings_to_translate[i];
         }
     }
     return buffer;
