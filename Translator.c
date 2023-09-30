@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "MyBasics.h"
+#include "C-MyBasics\MyBasics.c"
 
 #define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
