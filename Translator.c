@@ -96,6 +96,7 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
     for (size_t i = 0; i < ascii_strlen; i++)
     {
         const unsigned char current_char = ascii_str[i];
+        // For any exceptional characters that don't have a Wingdings counterpart, such as spaces
         if (current_char < ENG_TO_WINGDINGS_OFFSET)
             buffer[buffer_i++] = current_char;
         else
@@ -122,17 +123,25 @@ char *convert_wingdings_to_ascii(const char *const wingdings_to_translate)
     // to scan for specific starting bytes and ending bytes to help segment the input
     static char buffer[MAX_BYTE_READS];
     size_t i = 0;
+    puts("asjsjdaj");
+    puts(wingdings_to_translate);
     while (wingdings_to_translate[i] != '\0' && i < sizeof(buffer))
     {
         switch (wingdings_to_translate[i])
         {
+        case -1:
+            break;
+        default:
+            buffer[i] = wingdings_to_translate[i];
+            break;
         // These two starting bytes are guaranteed to have a one specific ending byte, so I can just let
         // them flow downwards
         case (char)-30:
         case (char)-16:
+        // Compiler gets angry if I don't encapsulate these cases in their own blocks
         {
-            const char *wingdings_singleton_last_byte_pos = strchr(wingdings_to_translate, (char)-114);
-            const size_t singleton_size = wingdings_to_translate - wingdings_singleton_last_byte_pos;
+            const char *const wingdings_singleton_last_byte_pos = strchr(wingdings_to_translate, (char)-114);
+            const size_t singleton_size = wingdings_to_translate - wingdings_singleton_last_byte_pos; // figure this out idiot
             strncpy_s(buffer + i, sizeof(buffer), wingdings_to_translate + i, singleton_size);
             i += singleton_size;
             puts("found");
@@ -140,16 +149,13 @@ char *convert_wingdings_to_ascii(const char *const wingdings_to_translate)
         }
         case (char)-32:
         {
-            const char *wingdings_singleton_last_byte_pos = strchr(wingdings_to_translate, (char)-114);
-            const size_t singleton_size = wingdings_to_translate - wingdings_singleton_last_byte_pos;
+            const char *const wingdings_singleton_last_byte_pos = strchr(wingdings_to_translate, (char)-114);
+            const size_t singleton_size = wingdings_singleton_last_byte_pos - wingdings_to_translate;
             strncpy_s(buffer + i, sizeof(buffer), wingdings_to_translate + i, singleton_size);
             i += singleton_size;
             puts("found");
             break;
         }
-            break;
-        default:
-            buffer[i] = wingdings_to_translate[i];
         }
     }
 
@@ -196,8 +202,8 @@ int translate_eng_to_wingdings(void)
             if (is_keyword != 0)
                 return is_keyword;
         }
-        fputs(convert_ascii_str_to_wingdings(input, INPUT_LEN), ENG_OUTPUT);
-        fputc('\n', ENG_OUTPUT);
+        fputs(convert_ascii_str_to_wingdings(input, INPUT_LEN), WINGDINGS_OUTPUT);
+        fputc('\n', WINGDINGS_OUTPUT);
     }
 }
 
@@ -215,12 +221,16 @@ int translate_eng_to_wingdings(void)
 int translate_wingdings_to_eng(void)
 {
     puts(
-        "The selected translator is Wingding-to-English\n"
+        "The selected translator is Wingdings-to-English\n"
         "Enter \"" EXIT_KEYWORD "\" to quit, or \"" CHANGE_TRANSLATOR_KEYWORD "\" to switch translators");
+
+    FILE *wingdings_input_file = NULL;
     while (1)
     {
-        printf("Enter the name of a file containing Wingdings: ");
-        const size_t INPUT_LEN = getStrStdin(&input, MAX_BYTE_READS);
+        // Using fputs() instead of puts() since puts() appends a newline, and I want the user's
+        // input to be on the same line as the "Enter English here: " prompt.
+        fputs("Enter the name of a file containing Wingdings: ", stdout);
+        getStrStdin(&input, MAX_BYTE_READS);
         {
             const int is_keyword = check_if_str_is_keyword(input);
             if (is_keyword == -1)
@@ -229,14 +239,30 @@ int translate_wingdings_to_eng(void)
                 return is_keyword;
         }
 
-        // We split the input into 8-byte keys as that's the largest possible Wingdings "character",
-        // so we need to add some padding bytes if the number of bytes in the input is not divisible by 8
+        fopen_s(&wingdings_input_file, input, "r");
+
+        if (!wingdings_input_file)
+            continue;
+
         {
-            const size_t number_of_pad_bytes = INPUT_LEN % sizeof(*wingdings);
-            for (size_t i = INPUT_LEN; i < INPUT_LEN + number_of_pad_bytes; i++)
-                input[i] = '\0';
+            errno_t status;
+            // If a pointer is non-null, getStr() assumes it points to allocated memory, and since there is an upper
+            // bound to the length of input, we can just allocate that upper bound here rather than allocate and free
+            // upon every new iteration
+            char *line_of_wingdings = malloc(MAX_BYTE_READS);
+            do
+            {
+                // getStr() returns the length of the string it wrote, which isn't necessarily needed, but it returns 0
+                // upon EOF or similar which can be used as a sort of "status code"
+                status = getStr(&line_of_wingdings, '\n', MAX_BYTE_READS, wingdings_input_file);
+            } while (status);
+            free(line_of_wingdings);
         }
+        fputs(convert_wingdings_to_ascii(input), ENG_OUTPUT);
+        fputc('\n', ENG_OUTPUT);
+        puts("Done");
     }
+    fclose(wingdings_input_file);
 }
 /*
  * Prompts the user for the translator they want to use.
@@ -280,18 +306,19 @@ int open_output_files(void)
 
     if (!ENG_OUTPUT)
     {
-        fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
+        fputs("Could not open output file (" WINGDINGS_TO_ENG_OUTPUT_FILENAME ")\n", stderr);
         return 0;
     }
     if (!WINGDINGS_OUTPUT)
     {
-        fputs("Could not open output file (" WINGDINGS_TO_ENG_OUTPUT_FILENAME ")\n", stderr);
+        fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
         return 0;
     }
 
     return 1;
 }
 
+/*
 // Usually used to examine the bytes that comprise each Wingdings character.
 void print_wingdings(void)
 {
@@ -313,7 +340,7 @@ void print_wingdings(void)
         }
         fputc('\n', WINGDINGS_OUTPUT);
     }
-}
+}*/
 
 int main(void)
 {
@@ -322,8 +349,7 @@ int main(void)
         if (!are_files_valid)
             return are_files_valid;
     }
-    print_wingdings();
-    return 0;
+
     // "+ 1" to account for a null terminator
     input = malloc(MAX_BYTE_READS + 1);
     if (!input)
