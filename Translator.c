@@ -34,6 +34,8 @@
 #define CHANGE_TRANSLATOR_KEYWORD "!chg"
 #define CHANGE_TRANSLATOR_STATUS_CODE (11)
 
+#define CASE_SENSITIVE_KEYWORDS 0
+
 // ASCII characters mapped to their respective Wingdings representation.
 static const char *const wingdings[] = {
     // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 total)
@@ -44,7 +46,7 @@ static const char *const wingdings[] = {
     "📁︎", "📂︎", "📄︎", "🗏︎", "🗐︎", "🗄︎", "⌛︎", "🖮︎", "🖰︎", "🖲︎",
 
     // Symbols 2 (:, ;, <, =, >, ?, @) (7 total)
-    // '@' has no Wingdings equivalent; it's just here for the sake of compatibility
+    // '@' has no Wingdings equivalent - it's here only for the sake of compatibility
     "🖳︎", "🖴︎", "🖫︎", "🖬︎", "✇︎", "✍︎", "@",
 
     // Uppercase alphabetical characters (A-Z) (26 total)
@@ -67,6 +69,8 @@ static const char *const wingdings[] = {
 // output_files[1] is the WINGDINGS OUTPUT FILE
 static FILE *output_files[] = {NULL, NULL};
 
+// By having one allocation (performed in main()), any usage of getStr() will thus not have to
+// allocate memory itself. Instead, it can simply copy input into this memory block.
 static char *input = NULL;
 
 char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_strlen)
@@ -117,52 +121,52 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
     return buffer;
 }
 
-char *convert_wingdings_to_ascii(const char *const wingdings_to_translate)
+char *convert_wingdings_to_ascii(const char *wingdings_to_translate)
 {
-    // The wingdings themselves are comprised of varying amounts of bytes, so instead I decided
-    // to scan for specific starting bytes and ending bytes to help segment the input
-    static char buffer[MAX_BYTE_READS];
-    size_t i = 0;
-    puts("asjsjdaj");
-    puts(wingdings_to_translate);
-    while (wingdings_to_translate[i] != '\0' && i < sizeof(buffer))
+    // "MAX_BYTE_READS + 1" to account for a null terminator
+    static char ascii_return[MAX_BYTE_READS + 1];
+
+    size_t ascii_return_i = 0;
+    for (; ascii_return_i < sizeof(ascii_return) - 1 && *wingdings_to_translate != '\0'; ascii_return_i++)
     {
-        switch (wingdings_to_translate[i])
+        switch (*wingdings_to_translate)
         {
-        case -1:
-            break;
+        // Anything with no valid Wingdings counterpart can just be thrown into the returned
+        // array
         default:
-            buffer[i] = wingdings_to_translate[i];
+            ascii_return[ascii_return_i] = *wingdings_to_translate;
+            wingdings_to_translate++;
             break;
-        // These two starting bytes are guaranteed to have a one specific ending byte, so I can just let
-        // them flow downwards
-        case (char)-30:
-        case (char)-16:
-        // Compiler gets angry if I don't encapsulate these cases in their own blocks
+        // These cases comprise all of the possible first bytes within a single Wingdings "character".
+        // In the case of -16, there are some Wingdings that have a different final byte as compared
+        // to -30 and -32, hence why it does not flow downwards and has its additional checks.
+        case -16:
         {
-            const char *const wingdings_singleton_last_byte_pos = strchr(wingdings_to_translate, (char)-114);
-            const size_t singleton_size = wingdings_to_translate - wingdings_singleton_last_byte_pos; // figure this out idiot
-            strncpy_s(buffer + i, sizeof(buffer), wingdings_to_translate + i, singleton_size);
-            i += singleton_size;
-            puts("found");
+            static char wingdings_container[WINGDINGS_CHAR_MAX_SIZE];
+            const char *first_byte = wingdings_to_translate;
+            // In this case, -80, -75, and the usual -114 can be the final byte for the edge case Wingdings "characters".
+            // The former two final bytes also occur abnormally early; their respective parent Wingdings "character"
+            // WILL contain 4 bytes compared to the usual 6 or 7.
+            const char *last_byte = strchr(first_byte, -80) || strchr(first_byte, -75) ? first_byte + 3 : strchr(first_byte, -114);
+            const size_t wingdings_char_size = last_byte - first_byte;
+
+            strncpy_s(wingdings_container, sizeof(wingdings_container), first_byte, wingdings_char_size);
+            wingdings_to_translate += wingdings_char_size;
             break;
         }
-        case (char)-32:
-        {
-            const char *const wingdings_singleton_last_byte_pos = strchr(wingdings_to_translate, (char)-114);
-            const size_t singleton_size = wingdings_singleton_last_byte_pos - wingdings_to_translate;
-            strncpy_s(buffer + i, sizeof(buffer), wingdings_to_translate + i, singleton_size);
-            i += singleton_size;
-            puts("found");
+        case -30:
+        case -32:
             break;
-        }
         }
     }
-
-    return buffer;
+    ascii_return[ascii_return_i] = '\0';
+    printf("%s | %d chars\n", ascii_return, ascii_return_i);
+    return ascii_return;
 }
+
 inline int check_if_str_is_keyword(const char *const str)
 {
+
     if (str == NULL)
         return -1;
     else if (strcasecmp(str, EXIT_KEYWORD) == 0)
@@ -239,30 +243,25 @@ int translate_wingdings_to_eng(void)
                 return is_keyword;
         }
 
-        fopen_s(&wingdings_input_file, input, "r");
-
-        if (!wingdings_input_file)
+        if (fopen_s(&wingdings_input_file, input, "r"))
             continue;
 
         {
-            errno_t status;
             // If a pointer is non-null, getStr() assumes it points to allocated memory, and since there is an upper
             // bound to the length of input, we can just allocate that upper bound here rather than allocate and free
             // upon every new iteration
-            char *line_of_wingdings = malloc(MAX_BYTE_READS);
             do
             {
                 // getStr() returns the length of the string it wrote, which isn't necessarily needed, but it returns 0
                 // upon EOF or similar which can be used as a sort of "status code"
-                status = getStr(&line_of_wingdings, '\n', MAX_BYTE_READS, wingdings_input_file);
-            } while (status);
-            free(line_of_wingdings);
+                if (getStr(&input, '\n', MAX_BYTE_READS, wingdings_input_file) == 0)
+                    fputs(convert_wingdings_to_ascii(input), ENG_OUTPUT);
+                fputc('\n', ENG_OUTPUT);
+            } while (!feof(wingdings_input_file));
         }
-        fputs(convert_wingdings_to_ascii(input), ENG_OUTPUT);
-        fputc('\n', ENG_OUTPUT);
+        fclose(wingdings_input_file);
         puts("Done");
     }
-    fclose(wingdings_input_file);
 }
 /*
  * Prompts the user for the translator they want to use.
@@ -340,7 +339,8 @@ void print_wingdings(void)
         }
         fputc('\n', WINGDINGS_OUTPUT);
     }
-}*/
+}
+*/
 
 int main(void)
 {
