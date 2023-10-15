@@ -160,7 +160,7 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
             // In this case, -80, -75, and the usual -114 can be the final byte for the edge case Wingdings "characters".
             // The former two final bytes also occur abnormally early; their respective parent Wingdings "character"
             // WILL contain 4 bytes compared to the usual 6 or 7.
-            const char *const last_byte = (strchr(wingdings_to_translate, -80) || strchr(wingdings_to_translate, -75) ? wingdings_to_translate + 3 : strchr(wingdings_to_translate, -114));
+            const char *const last_byte = strchr(wingdings_to_translate, -114) ? strchr(wingdings_to_translate, -114) : wingdings_to_translate + 3;
             const size_t wingdings_char_size = last_byte - wingdings_to_translate + 1;
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
@@ -173,12 +173,15 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
         case -30:
         case -32:
         {
-            // Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have 
-            // -114 just smack-dab in the middle of their string representation AND at their end, and so strchr() ends up 
-            // returning the byte that's in the middle of the Wingdings rather than the one at the end.
-            // To be honest, I'll probably end up not knowing what this even does in a day.
+            /* Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have
+             * -114 just smack-dab in the middle of their string representation AND at their end, so strchr() ends up
+             * returning the byte that's in the middle of the Wingdings rather than the one at the end.
+             *
+             * And to be honest, I'll probably end up forgetting what this even does in a day.
+             * But hey, at least const-ness is preserved! That counts for something, right?
+             */
             const char *const last_byte = strchr(wingdings_to_translate, -114);
-            const size_t wingdings_char_size = (last_byte - wingdings_to_translate + 1) < 6 ? strchr(wingdings_to_translate + (last_byte - wingdings_to_translate + 1), -114) - wingdings_to_translate + 1 : last_byte - wingdings_to_translate + 1;
+            const size_t wingdings_char_size = (last_byte - wingdings_to_translate + 1) < 6 ? strchr(wingdings_to_translate + (last_byte - wingdings_to_translate), -114) - wingdings_to_translate : last_byte - wingdings_to_translate + 1;
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
 
@@ -189,15 +192,6 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
         }
         }
     }
-
-    for (size_t i = 0, counter = 0; i < sizeof(ascii_return) && counter < 2; i++)
-    {
-        if (ascii_return[i] != '\0')
-            putchar(ascii_return[i]);
-        else
-            counter++;
-    }
-
     ascii_return[ascii_return_i] = '\0';
     return ascii_return;
 }
@@ -344,6 +338,24 @@ int open_output_files(void)
     }
 
     return 1;
+}
+
+// Used for byte-level analysis of the Wingdings "characters"
+void print_wingdings_bytes(void)
+{
+    FILE *bytes_out = fopen("wingdingbytesfull.txt", "w");
+    for (size_t i = 0; i < NUM_WINGDINGS; i++)
+    {
+        fprintf(bytes_out, "%s: ", wingdings[i]);
+        for (size_t j = 0;  ; j++)
+        {
+            if (wingdings[i][j] == '\0'){
+                fputc('\n', bytes_out);
+                break;
+            }
+            fprintf(bytes_out, "%d ", (char)wingdings[i][j]);
+        }
+    }
 }
 
 int main(void)
