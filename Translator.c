@@ -81,26 +81,6 @@ static char *input = NULL;
 
 char *ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_strlen)
 {
-    /*
-     * The provided Wingdings array accounts for chars '!' (ASCII value 33) to '~' (ASCII value 126),
-     * and nothing else.
-     *
-     * In other words, this means that the Wingdings equivalent for '!' is located at wingdings[0].
-     * Thus, the number of valid Wingdings is equivalent to the number of ASCII characters
-     * offset by '!' (33).
-     *
-     * So, using the array to translate an ASCII character to Wingdings requires you to use the
-     * difference between the ASCII character's value and '!' (33).
-     *
-     * An example being the letter 'e' (value 101) which translates to '♏︎' (wingdings[68]) in Wingdings.
-     * In order to get the Wingdings equivalent, you'd need to write something like the following:
-     *
-     * > "wingdings['e' - '!']"
-     *
-     * ...or...
-     *
-     * > "wingdings['e' - 33]"
-     */
     static char buffer[MAX_BYTE_READS];
     size_t buffer_i = 0;
     for (size_t i = 0; i < ascii_strlen; i++)
@@ -170,8 +150,11 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              *
              * To be honest, I'll probably end up forgetting what this even does in a day.
              * But hey, at least const-ness is preserved! That counts for something, right?
+             * 
+             * (i'll see if i can make this less atrocious later)
              */
-            const size_t wingdings_char_size = *last_byte == -114 && (last_byte - wingdings_to_translate + 1) < 6 ? strchr(wingdings_to_translate + (last_byte - wingdings_to_translate), -114) - wingdings_to_translate : last_byte - wingdings_to_translate + 1;
+
+            const size_t wingdings_char_size = (*last_byte == -114) && (last_byte - wingdings_to_translate + 1) < 6 ? strchr(wingdings_to_translate + (last_byte - wingdings_to_translate) + 1, -114) - wingdings_to_translate + 1 : last_byte - wingdings_to_translate + 1;
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
 
