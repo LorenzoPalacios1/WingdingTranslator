@@ -160,8 +160,7 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
             // In this case, -80, -75, and the usual -114 can be the final byte for the edge case Wingdings "characters".
             // The former two final bytes also occur abnormally early; their respective parent Wingdings "character"
             // WILL contain 4 bytes compared to the usual 6 or 7.
-            puts("ran");
-            const char *last_byte = (strchr(wingdings_to_translate, -80) || strchr(wingdings_to_translate, -75) ? wingdings_to_translate + 3 : strchr(wingdings_to_translate, -114));
+            const char *const last_byte = (strchr(wingdings_to_translate, -80) || strchr(wingdings_to_translate, -75) ? wingdings_to_translate + 3 : strchr(wingdings_to_translate, -114));
             const size_t wingdings_char_size = last_byte - wingdings_to_translate + 1;
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
@@ -174,8 +173,12 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
         case -30:
         case -32:
         {
-            const char *last_byte = strchr(wingdings_to_translate, -114);
-            const size_t wingdings_char_size = last_byte - wingdings_to_translate + 1;
+            // Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have 
+            // -114 just smack-dab in the middle of their string representation AND at their end, and so strchr() ends up 
+            // returning the byte that's in the middle of the Wingdings rather than the one at the end.
+            // To be honest, I'll probably end up not knowing what this even does in a day.
+            const char *const last_byte = strchr(wingdings_to_translate, -114);
+            const size_t wingdings_char_size = (last_byte - wingdings_to_translate + 1) < 6 ? strchr(wingdings_to_translate + (last_byte - wingdings_to_translate + 1), -114) - wingdings_to_translate + 1 : last_byte - wingdings_to_translate + 1;
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
 
@@ -289,7 +292,7 @@ int translate_wingdings_to_eng(void)
             {
                 // getStr() returns the length of the string it wrote, which isn't necessarily needed, but it returns 0
                 // upon EOF or similar which can be used as a sort of "status code"
-                if (getStr(&input, '\n', MAX_BYTE_READS, wingdings_input_file) == 0)
+                if (getStr(&input, '\n', MAX_BYTE_READS, wingdings_input_file) != 0)
                     puts(wingdings_to_ascii_str(input));
             } while (!feof(wingdings_input_file));
         }
