@@ -79,6 +79,43 @@ static FILE *output_files[] = {NULL};
 // allocate memory itself. Instead, it can simply copy input into this memory block.
 static char *input = NULL;
 
+/* - Utility Functions - */
+
+// Returns 0 if the output files were opened successfully.
+// Returns 1 otherwise.
+int open_output_files(void)
+{
+    if (SHOULD_CLEAR_OUTPUT_FILES)
+    {
+        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "w");
+    }
+    else
+    {
+        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
+    }
+
+    if (!WINGDINGS_OUTPUT)
+    {
+        fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
+        return 1;
+    }
+
+    return 0;
+}
+
+int check_if_str_is_keyword(const char *const str)
+{
+    if (str == NULL)
+        return -1;
+    if (strcasecmp(str, EXIT_KEYWORD) == 0)
+        return EXIT_STATUS_CODE;
+    if (strcasecmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
+        return CHANGE_TRANSLATOR_STATUS_CODE;
+    return 0;
+}
+
+/* - Functions to translate from ASCII to Wingdings and vice versa - */
+
 char *ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_strlen)
 {
     static char buffer[MAX_BYTE_READS];
@@ -150,7 +187,7 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              *
              * To be honest, I'll probably end up forgetting what this even does in a day.
              * But hey, at least const-ness is preserved! That counts for something, right?
-             * 
+             *
              * (i'll see if i can make this less atrocious later)
              */
 
@@ -169,18 +206,6 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
     return ascii_return;
 }
 
-int check_if_str_is_keyword(const char *const str)
-{
-
-    if (str == NULL)
-        return -1;
-    else if (strcasecmp(str, EXIT_KEYWORD) == 0)
-        return EXIT_STATUS_CODE;
-    else if (strcasecmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
-        return CHANGE_TRANSLATOR_STATUS_CODE;
-    return 0;
-}
-
 /*
  * This function will prompt the user for English characters to be converted into
  * their respective Wingdings counterpart(s).
@@ -192,6 +217,9 @@ int check_if_str_is_keyword(const char *const str)
  */
 int translate_eng_to_wingdings(void)
 {
+    // i'll have to figure out a decent way to handle file opening errors, but for now this will do
+    open_output_files();
+
     puts(
         "The selected translator is English-to-Wingdings\n"
         "Enter \"" EXIT_KEYWORD "\" to quit, or \"" CHANGE_TRANSLATOR_KEYWORD "\" to switch translators");
@@ -208,8 +236,10 @@ int translate_eng_to_wingdings(void)
             const int is_keyword = check_if_str_is_keyword(input);
             if (is_keyword == -1)
                 continue;
-            if (is_keyword != 0)
+            if (is_keyword != 0){
+                fclose(WINGDINGS_OUTPUT);
                 return is_keyword;
+            }
         }
         fputs(ascii_str_to_wingdings(input, INPUT_LEN), WINGDINGS_OUTPUT);
         fputc('\n', WINGDINGS_OUTPUT);
@@ -217,8 +247,6 @@ int translate_eng_to_wingdings(void)
 }
 
 /*
- * - WORK IN PROGRESS -
- *
  * Container function for the translation loop
  * This function will prompt the user for Wingdings characters to be converted
  * into English characters, if possible.
@@ -291,28 +319,6 @@ int prompt_user_for_translator(void)
     return user_choice;
 }
 
-// Returns 1, true, if the output files are open.
-// Returns 0 otherwise.
-int open_output_files(void)
-{
-    if (SHOULD_CLEAR_OUTPUT_FILES)
-    {
-        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "w");
-    }
-    else
-    {
-        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
-    }
-
-    if (!WINGDINGS_OUTPUT)
-    {
-        fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
-        return 0;
-    }
-
-    return 1;
-}
-
 // Used for byte-level analysis of the Wingdings "characters"
 void print_wingdings_bytes(void)
 {
@@ -320,9 +326,10 @@ void print_wingdings_bytes(void)
     for (size_t i = 0; i < NUM_WINGDINGS; i++)
     {
         fprintf(bytes_out, "%s: ", wingdings[i]);
-        for (size_t j = 0;  ; j++)
+        for (size_t j = 0;; j++)
         {
-            if (wingdings[i][j] == '\0'){
+            if (wingdings[i][j] == '\0')
+            {
                 fputc('\n', bytes_out);
                 break;
             }
@@ -333,13 +340,7 @@ void print_wingdings_bytes(void)
 
 int main(void)
 {
-    {
-        const int are_files_valid = open_output_files();
-        if (!are_files_valid)
-            return are_files_valid;
-    }
-
-    // "+ 1" to account for a null terminator
+    // "MAX_BYTE_READS + 1" to account for a null terminator
     input = malloc(MAX_BYTE_READS + 1);
     if (!input)
     {
