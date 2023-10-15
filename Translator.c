@@ -144,7 +144,6 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
     size_t ascii_return_i = 0;
     for (; ascii_return_i < sizeof(ascii_return) - 1 && *wingdings_to_translate != '\0'; ascii_return_i++)
     {
-        static char wingdings_container[WINGDINGS_CHAR_MAX_SIZE + 1];
         switch (*wingdings_to_translate)
         {
         // Anything without a valid Wingdings counterpart can just be thrown into the returned array
@@ -153,35 +152,26 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
             wingdings_to_translate++;
             break;
         // These cases comprise all of the possible first bytes within a single Wingdings "character".
-        // In the case of -16, there are some Wingdings that have a different final byte as compared
-        // to -30 and -32, hence why it does not flow downwards and has its additional checks.
         case -16:
-        {
-            // In this case, -80, -75, and the usual -114 can be the final byte for the edge case Wingdings "characters".
-            // The former two final bytes also occur abnormally early; their respective parent Wingdings "character"
-            // WILL contain 4 bytes compared to the usual 6 or 7.
-            const char *const last_byte = strchr(wingdings_to_translate, -114) ? strchr(wingdings_to_translate, -114) : wingdings_to_translate + 3;
-            const size_t wingdings_char_size = last_byte - wingdings_to_translate + 1;
-            strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
-            wingdings_container[wingdings_char_size] = '\0';
-
-            ascii_return[ascii_return_i] = wingdings_char_to_ascii_char(wingdings_container);
-
-            wingdings_to_translate += wingdings_char_size;
-            break;
-        }
         case -30:
         case -32:
         {
+            static char wingdings_container[WINGDINGS_CHAR_MAX_SIZE + 1];
+            /*
+             * For most Wingdings "characters", the final byte in their string representation will be -114.
+             * However, bytes -80 and -75 can be the final byte for two edge case Wingdings "characters".
+             * The former two bytes also occur abnormally early; their respective parent Wingdings "character"
+             * WILL contain 4 bytes compared to the usual 6 or 7.
+             */
+            const char *const last_byte = strchr(wingdings_to_translate, -114) ? strchr(wingdings_to_translate, -114) : wingdings_to_translate + 3;
             /* Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have
              * -114 just smack-dab in the middle of their string representation AND at their end, so strchr() ends up
              * returning the byte that's in the middle of the Wingdings rather than the one at the end.
              *
-             * And to be honest, I'll probably end up forgetting what this even does in a day.
+             * To be honest, I'll probably end up forgetting what this even does in a day.
              * But hey, at least const-ness is preserved! That counts for something, right?
              */
-            const char *const last_byte = strchr(wingdings_to_translate, -114);
-            const size_t wingdings_char_size = (last_byte - wingdings_to_translate + 1) < 6 ? strchr(wingdings_to_translate + (last_byte - wingdings_to_translate), -114) - wingdings_to_translate : last_byte - wingdings_to_translate + 1;
+            const size_t wingdings_char_size = *last_byte == -114 && (last_byte - wingdings_to_translate + 1) < 6 ? strchr(wingdings_to_translate + (last_byte - wingdings_to_translate), -114) - wingdings_to_translate : last_byte - wingdings_to_translate + 1;
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
 
