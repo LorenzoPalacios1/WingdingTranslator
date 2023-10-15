@@ -7,8 +7,16 @@
 #define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
 #define WINGDINGS_CHAR_MAX_SIZE (sizeof(*wingdings))
-
-#define ENG_TO_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
+/*
+ * This is the offset between a standard ASCII char's value and its corresponding Wingdings character.
+ *
+ * Subtract a char by this value when indexing wingdings[] to get its Wingdings counterpart, or add this value
+ * to a valid index within wingdings[] to get that particular Wingdings' char equivalent.
+ *
+ * An example: Consider the char 'd', ASCII value 100. 'd' corresponds to '♎︎', index 68. If you only have 'd', you can
+ * find its corresponding Wingdings via "wingdings['d' - ASCII_WINGDINGS_OFFSET]".
+ */
+#define ASCII_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
 
 #define CODE_ENGLISH_TO_WINGDINGS (0)
 #define CODE_WINGDINGS_TO_ENGLISH (1)
@@ -36,34 +44,34 @@
 
 #define CASE_SENSITIVE_KEYWORDS 0
 
-// ASCII characters mapped to their respective Wingdings representation.
-static const char *const wingdings[] = {
-    // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 total)
-    "✏︎", "✂︎", "✁︎", "👓︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "✆︎", "🖂︎", "🖃︎", "📪︎",
-    "📫︎", "📬︎", "📭︎",
+    // ASCII characters mapped to their respective Wingdings representation.
+    static const char *const wingdings[] = {
+        // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 total)
+        "✏︎", "✂︎", "✁︎", "👓︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "✆︎", "🖂︎", "🖃︎", "📪︎",
+        "📫︎", "📬︎", "📭︎",
 
-    // Numerical characters (0-9) (10 total)
-    "📁︎", "📂︎", "📄︎", "🗏︎", "🗐︎", "🗄︎", "⌛︎", "🖮︎", "🖰︎", "🖲︎",
+        // Numerical characters (0-9) (10 total)
+        "📁︎", "📂︎", "📄︎", "🗏︎", "🗐︎", "🗄︎", "⌛︎", "🖮︎", "🖰︎", "🖲︎",
 
-    // Symbols 2 (:, ;, <, =, >, ?, @) (7 total)
-    // '@' has no Wingdings equivalent - it's here only for the sake of compatibility
-    "🖳︎", "🖴︎", "🖫︎", "🖬︎", "✇︎", "✍︎", "@",
+        // Symbols 2 (:, ;, <, =, >, ?, @) (7 total)
+        // '@' has no Wingdings equivalent - it's here only for the sake of compatibility
+        "🖳︎", "🖴︎", "🖫︎", "🖬︎", "✇︎", "✍︎", "@",
 
-    // Uppercase alphabetical characters (A-Z) (26 total)
-    "✌︎", "👌︎", "👍︎", "👎︎", "☜︎", "☞︎", "☝︎", "☟︎", "✋︎", "☺︎", "😐︎", "☹︎",
-    "💣︎", "☠︎", "⚐︎", "🏱︎", "✈︎", "☼︎", "💧︎", "❄︎", "🕆︎", "✞︎", "🕈︎", "✠︎",
-    "✡︎", "☪︎",
+        // Uppercase alphabetical characters (A-Z) (26 total)
+        "✌︎", "👌︎", "👍︎", "👎︎", "☜︎", "☞︎", "☝︎", "☟︎", "✋︎", "☺︎", "😐︎", "☹︎",
+        "💣︎", "☠︎", "⚐︎", "🏱︎", "✈︎", "☼︎", "💧︎", "❄︎", "🕆︎", "✞︎", "🕈︎", "✠︎",
+        "✡︎", "☪︎",
 
-    // Symbols 3 ([, \, ], ^, _, `) (6 total)
-    "☯︎", "ॐ︎", "☸︎", "☸︎", "♈︎", "♉︎",
+        // Symbols 3 ([, \, ], ^, _, `) (6 total)
+        "☯︎", "ॐ︎", "☸︎", "☸︎", "♈︎", "♉︎",
 
-    // Lowercase alphabetical characters (a-z) (26 total)
-    "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎", "🙰", "🙵", "●︎",
-    "❍︎", "■︎", "□︎", "◻︎", "❑︎", "❒︎", "⬧︎", "⧫︎", "◆︎", "❖︎", "⬥︎", "⌧︎",
-    "⍓︎", "⌘︎",
+        // Lowercase alphabetical characters (a-z) (26 total)
+        "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎", "🙰", "🙵", "●︎",
+        "❍︎", "■︎", "□︎", "◻︎", "❑︎", "❒︎", "⬧︎", "⧫︎", "◆︎", "❖︎", "⬥︎", "⌧︎",
+        "⍓︎", "⌘︎",
 
-    // Symbols 4 ({, |, }, ~) (4 total)
-    "❀︎", "✿︎", "❝︎", "❞︎"};
+        // Symbols 4 ({, |, }, ~) (4 total)
+        "❀︎", "✿︎", "❝︎", "❞︎"};
 
 // output_files[0] is the ENGLISH OUTPUT FILE
 // output_files[1] is the WINGDINGS OUTPUT FILE
@@ -101,11 +109,11 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
     {
         const unsigned char current_char = ascii_str[i];
         // For any exceptional characters that don't have a Wingdings counterpart, such as spaces
-        if (current_char < ENG_TO_WINGDINGS_OFFSET)
+        if (current_char < ASCII_WINGDINGS_OFFSET)
             buffer[buffer_i++] = current_char;
         else
         {
-            const char *const wingdings_char = wingdings[current_char - ENG_TO_WINGDINGS_OFFSET];
+            const char *const wingdings_char = wingdings[current_char - ASCII_WINGDINGS_OFFSET];
             const size_t wingdings_char_len = strlen(wingdings_char);
             strncpy_s(buffer + buffer_i, sizeof(buffer) - buffer_i, wingdings_char, wingdings_char_len);
             buffer_i += wingdings_char_len;
@@ -121,14 +129,24 @@ char *convert_ascii_str_to_wingdings(const char *const ascii_str, const size_t a
     return buffer;
 }
 
-char *convert_wingdings_to_ascii(const char *wingdings_to_translate)
+char wingdings_char_to_ascii_char(const char *_wingdings_char)
 {
-    // "MAX_BYTE_READS + 1" to account for a null terminator
-    static char ascii_return[MAX_BYTE_READS + 1];
+    for (int i = 0; i < (int)NUM_WINGDINGS; i++)
+    {
+        if (strcmp(_wingdings_char, wingdings[i]) == 0)
+            return i + ASCII_WINGDINGS_OFFSET;
+    }
+    return '\0';
+}
+
+char *wingdings_to_ascii_str(const char *wingdings_to_translate)
+{
+    static char ascii_return[MAX_BYTE_READS + sizeof('\0')];
 
     size_t ascii_return_i = 0;
     for (; ascii_return_i < sizeof(ascii_return) - 1 && *wingdings_to_translate != '\0'; ascii_return_i++)
     {
+        static char wingdings_container[WINGDINGS_CHAR_MAX_SIZE + sizeof('\0')];
         switch (*wingdings_to_translate)
         {
         // Anything with no valid Wingdings counterpart can just be thrown into the returned
@@ -142,29 +160,31 @@ char *convert_wingdings_to_ascii(const char *wingdings_to_translate)
         // to -30 and -32, hence why it does not flow downwards and has its additional checks.
         case -16:
         {
-            static char wingdings_container[WINGDINGS_CHAR_MAX_SIZE];
-            const char *first_byte = wingdings_to_translate;
             // In this case, -80, -75, and the usual -114 can be the final byte for the edge case Wingdings "characters".
             // The former two final bytes also occur abnormally early; their respective parent Wingdings "character"
             // WILL contain 4 bytes compared to the usual 6 or 7.
-            const char *last_byte = strchr(first_byte, -80) || strchr(first_byte, -75) ? first_byte + 3 : strchr(first_byte, -114);
-            const size_t wingdings_char_size = last_byte - first_byte;
+            const char *last_byte = strchr(wingdings_to_translate, -80) || strchr(wingdings_to_translate, -75) ? wingdings_to_translate + 3 : strchr(wingdings_to_translate, -114);
+            const size_t wingdings_char_size = last_byte - wingdings_to_translate;
+            strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size - sizeof('\0'));
+            wingdings_container[wingdings_char_size + sizeof('\0')] = '\0';
 
-            strncpy_s(wingdings_container, sizeof(wingdings_container), first_byte, wingdings_char_size);
+            ascii_return[ascii_return_i] = wingdings_char_to_ascii_char(wingdings_container);
+
             wingdings_to_translate += wingdings_char_size;
             break;
         }
         case -30:
         case -32:
             break;
-        }
+            printf("added: %d\n", ascii_return[ascii_return_i]);
+        };
     }
     ascii_return[ascii_return_i] = '\0';
     printf("%s | %d chars\n", ascii_return, ascii_return_i);
     return ascii_return;
 }
 
-inline int check_if_str_is_keyword(const char *const str)
+int check_if_str_is_keyword(const char *const str)
 {
 
     if (str == NULL)
@@ -255,7 +275,7 @@ int translate_wingdings_to_eng(void)
                 // getStr() returns the length of the string it wrote, which isn't necessarily needed, but it returns 0
                 // upon EOF or similar which can be used as a sort of "status code"
                 if (getStr(&input, '\n', MAX_BYTE_READS, wingdings_input_file) == 0)
-                    fputs(convert_wingdings_to_ascii(input), ENG_OUTPUT);
+                    fputs(wingdings_to_ascii_str(input), ENG_OUTPUT);
                 fputc('\n', ENG_OUTPUT);
             } while (!feof(wingdings_input_file));
         }
