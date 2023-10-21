@@ -107,10 +107,21 @@ int check_if_str_is_keyword(const char *const str)
 {
     if (str == NULL)
         return -1;
-    if (strcasecmp(str, EXIT_KEYWORD) == 0)
-        return EXIT_STATUS_CODE;
-    if (strcasecmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
-        return CHANGE_TRANSLATOR_STATUS_CODE;
+
+    if (CASE_SENSITIVE_KEYWORDS)
+    {
+        if (strcmp(str, EXIT_KEYWORD) == 0)
+            return EXIT_STATUS_CODE;
+        if (strcmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
+            return CHANGE_TRANSLATOR_STATUS_CODE;
+    }
+    else
+    {
+        if (strcasecmp(str, EXIT_KEYWORD) == 0)
+            return EXIT_STATUS_CODE;
+        if (strcasecmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
+            return CHANGE_TRANSLATOR_STATUS_CODE;
+    }
     return 0;
 }
 
@@ -236,7 +247,8 @@ int translate_eng_to_wingdings(void)
             const int is_keyword = check_if_str_is_keyword(input);
             if (is_keyword == -1)
                 continue;
-            if (is_keyword != 0){
+            if (is_keyword != 0)
+            {
                 fclose(WINGDINGS_OUTPUT);
                 return is_keyword;
             }
