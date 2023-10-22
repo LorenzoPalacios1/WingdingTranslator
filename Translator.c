@@ -2,78 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+
 #include "C-MyBasics\MyBasics.h"
-
-#define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
-
-#define WINGDINGS_CHAR_MAX_SIZE (sizeof(*wingdings))
-/*
- * This is the offset between a standard ASCII char's value and its corresponding Wingdings character.
- *
- * Subtract a char by this value when indexing wingdings[] to get its Wingdings counterpart, or add this value
- * to a valid index within wingdings[] to get that particular Wingdings' char equivalent.
- *
- * An example: Consider the char 'd', ASCII value 100. 'd' corresponds to '♎︎', index 68. If you only have 'd', you can
- * find its corresponding Wingdings via "wingdings['d' - ASCII_WINGDINGS_OFFSET]".
- */
-#define ASCII_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
-
-#define CODE_ENGLISH_TO_WINGDINGS (0)
-#define CODE_WINGDINGS_TO_ENGLISH (1)
-
-#define WINGDINGS_TO_ENG_OUTPUT_FILENAME "WingdingsToEnglish.txt"
-#define ENG_TO_WINGDINGS_OUTPUT_FILENAME "EnglishToWingdings.txt"
-
-#define WINGDINGS_OUTPUT output_files[0]
-
-#define SHOULD_CLEAR_OUTPUT_FILES (1)
-
-// The maximum number of bytes to read from one line of input.
-#define MAX_BYTE_READS (4096)
-
-// Preferably keep the below keywords unique enough so that they won't
-// interfere with normal input when the translator picks up input.
-// Regular words like "exit" could be legitimate user input for instance.
-
-#define EXIT_KEYWORD "!exit"
-#define EXIT_STATUS_CODE (10)
-
-#define CHANGE_TRANSLATOR_KEYWORD "!chg"
-#define CHANGE_TRANSLATOR_STATUS_CODE (11)
-
-#define CASE_SENSITIVE_KEYWORDS 0
-
-// ASCII characters mapped to their respective Wingdings representation.
-static const char *const wingdings[] = {
-    // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 total)
-    "✏︎", "✂︎", "✁︎", "👓︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "✆︎", "🖂︎", "🖃︎", "📪︎",
-    "📫︎", "📬︎", "📭︎",
-
-    // Numerical characters (0-9) (10 total)
-    "📁︎", "📂︎", "📄︎", "🗏︎", "🗐︎", "🗄︎", "⌛︎", "🖮︎", "🖰︎", "🖲︎",
-
-    // Symbols 2 (:, ;, <, =, >, ?, @) (7 total)
-    // '@' has no Wingdings equivalent - it's here only for the sake of compatibility
-    "🖳︎", "🖴︎", "🖫︎", "🖬︎", "✇︎", "✍︎", "@",
-
-    // Uppercase alphabetical characters (A-Z) (26 total)
-    "✌︎", "👌︎", "👍︎", "👎︎", "☜︎", "☞︎", "☝︎", "☟︎", "✋︎", "☺︎", "😐︎", "☹︎",
-    "💣︎", "☠︎", "⚐︎", "🏱︎", "✈︎", "☼︎", "💧︎", "❄︎", "🕆︎", "✞︎", "🕈︎", "✠︎",
-    "✡︎", "☪︎",
-
-    // Symbols 3 ([, \, ], ^, _, `) (6 total)
-    "☯︎", "ॐ︎", "☸︎", "☸︎", "♈︎", "♉︎",
-
-    // Lowercase alphabetical characters (a-z) (26 total)
-    "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎", "🙰", "🙵", "●︎",
-    "❍︎", "■︎", "□︎", "◻︎", "❑︎", "❒︎", "⬧︎", "⧫︎", "◆︎", "❖︎", "⬥︎", "⌧︎",
-    "⍓︎", "⌘︎",
-
-    // Symbols 4 ({, |, }, ~) (4 total)
-    "❀︎", "✿︎", "❝︎", "❞︎"};
-
-// output_files[0] is the WINGDINGS OUTPUT FILE
-static FILE *output_files[] = {NULL};
+#include "Translator.h"
 
 // By having one allocation (performed in main()), any usage of getStr() will thus not have to
 // allocate memory itself. Instead, it can simply copy input into this memory block.
@@ -81,29 +12,7 @@ static char *input = NULL;
 
 /* - Utility Functions - */
 
-// Returns 0 if the output files were opened successfully.
-// Returns 1 otherwise.
-int open_output_files(void)
-{
-    if (SHOULD_CLEAR_OUTPUT_FILES)
-    {
-        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "w");
-    }
-    else
-    {
-        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
-    }
-
-    if (!WINGDINGS_OUTPUT)
-    {
-        fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
-        return 1;
-    }
-
-    return 0;
-}
-
-int check_if_str_is_keyword(const char *const str)
+static inline int check_if_str_is_keyword(const char *const str)
 {
     if (str == NULL)
         return -1;
@@ -155,8 +64,15 @@ char *ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_str
     return buffer;
 }
 
-char wingdings_char_to_ascii_char(const char *_wingdings_char)
+// Used ONLY in wingdings_char_to_ascii_char() for the usage of bsearch()
+static inline int cmp(const void *const a, const void *const b)
 {
+    return strcmp(a, b);
+}
+
+char wingdings_char_to_ascii_char(const char *const _wingdings_char)
+{
+    bsearch(_wingdings_char, sorted_wingdings, NUM_WINGDINGS, WINGDINGS_CHAR_MAX_SIZE, cmp);
     for (int i = 0; i < (int)NUM_WINGDINGS; i++)
     {
         if (strcmp(_wingdings_char, wingdings[i]) == 0)
@@ -226,7 +142,7 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
  * If EXIT_KEYWORD or CHANGE_TRANSLATOR_KEYWORD are entered, this function will
  * terminate its translation loop and return the respective status code.
  */
-int translate_eng_to_wingdings(void)
+static int translate_eng_to_wingdings(void)
 {
     // i'll have to figure out a decent way to handle file opening errors, but for now this will do
     open_output_files();
@@ -267,7 +183,7 @@ int translate_eng_to_wingdings(void)
  * If EXIT_KEYWORD or CHANGE_TRANSLATOR_KEYWORD are entered, this function will
  * terminate the translation loop and return the respective status code.
  */
-int translate_wingdings_to_eng(void)
+static int translate_wingdings_to_eng(void)
 {
     puts(
         "The selected translator is Wingdings-to-English\n"
@@ -306,6 +222,7 @@ int translate_wingdings_to_eng(void)
         fclose(wingdings_input_file);
     }
 }
+
 /*
  * Prompts the user for the translator they want to use.
  * This function will return either CODE_ENGLISH_TO_WINGDINGS, or CODE_WINGDINGS_TO_ENGLISH.
@@ -313,7 +230,7 @@ int translate_wingdings_to_eng(void)
  * If the user inputs something invalid, the function will prompt the user again until they input
  * something valid.
  */
-int prompt_user_for_translator(void)
+static int prompt_user_for_translator(void)
 {
     puts("\nWhat would you like to translate?");
     puts("0. Translate English-to-Wingdings");
@@ -329,25 +246,6 @@ int prompt_user_for_translator(void)
         fseek(stdin, 0, SEEK_END);
     } while (user_choice != CODE_ENGLISH_TO_WINGDINGS && user_choice != CODE_WINGDINGS_TO_ENGLISH);
     return user_choice;
-}
-
-// Used for byte-level analysis of the Wingdings "characters"
-void print_wingdings_bytes(void)
-{
-    FILE *bytes_out = fopen("wingdingbytesfull.txt", "w");
-    for (size_t i = 0; i < NUM_WINGDINGS; i++)
-    {
-        fprintf(bytes_out, "%s: ", wingdings[i]);
-        for (size_t j = 0;; j++)
-        {
-            if (wingdings[i][j] == '\0')
-            {
-                fputc('\n', bytes_out);
-                break;
-            }
-            fprintf(bytes_out, "%d ", (char)wingdings[i][j]);
-        }
-    }
 }
 
 int main(void)
