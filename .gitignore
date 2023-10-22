@@ -1,3 +1,4 @@
 *.exe
-*.txt
+/*.txt
+/Miscellaneous/Wingdings Sorter/*.txt
 .vscode
