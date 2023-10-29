@@ -1,6 +1,13 @@
+// - Header Guards End -
 #ifndef _INC_STDIO
 #include <stdio.h>
 #endif
+
+#ifndef _INC_TRANSLATOR
+#define _INC_TRANSLATOR
+#endif
+
+// - Header Guards End -
 
 #define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
@@ -9,11 +16,12 @@
 /*
  * This is the offset between a standard ASCII char's value and its corresponding Wingdings character.
  *
- * Subtract a char by this value when indexing wingdings[] to get its Wingdings counterpart, or add this value
- * to a valid index within wingdings[] to get that particular Wingdings' char equivalent.
+ * Subtract a char by this value when indexing wingdings[] to get its Wingdings counterpart, or
+ * add this value to a valid index within wingdings[] to get that particular Wingdings' char equivalent.
  *
- * An example: Consider the char 'd', ASCII value 100. 'd' corresponds to '♎︎', index 68. If you only have 'd', you can
- * find its corresponding Wingdings via "wingdings['d' - ASCII_WINGDINGS_OFFSET]".
+ * An example: Consider the char 'd', ASCII value 100. 'd' corresponds to '♎︎', index 68.
+ * If you have only the value of 'd', you can find its corresponding Wingdings via
+ * "wingdings['d' - ASCII_WINGDINGS_OFFSET]".
  */
 #define ASCII_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
 
@@ -48,45 +56,49 @@ static const char *const wingdings[] = {
     "✏︎", "✂︎", "✁︎", "👓︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "✆︎", "🖂︎", "🖃︎", "📪︎",
     "📫︎", "📬︎", "📭︎",
 
-    // Numerical characters (0-9) (10 total)
+    // Numerical characters (0-9) (10 total | 25 total Wingdings)
     "📁︎", "📂︎", "📄︎", "🗏︎", "🗐︎", "🗄︎", "⌛︎", "🖮︎", "🖰︎", "🖲︎",
 
-    // Symbols 2 (:, ;, <, =, >, ?, @) (7 total)
+    // Symbols 2 (:, ;, <, =, >, ?, @) (7 total | 32 total Wingdings)
     // '@' has no Wingdings equivalent - it's here only for the sake of compatibility
     "🖳︎", "🖴︎", "🖫︎", "🖬︎", "✇︎", "✍︎", "@",
 
-    // Uppercase alphabetical characters (A-Z) (26 total)
+    // Uppercase alphabetical characters (A-Z) (26 total | 58 total Wingdings)
     "✌︎", "👌︎", "👍︎", "👎︎", "☜︎", "☞︎", "☝︎", "☟︎", "✋︎", "☺︎", "😐︎", "☹︎",
     "💣︎", "☠︎", "⚐︎", "🏱︎", "✈︎", "☼︎", "💧︎", "❄︎", "🕆︎", "✞︎", "🕈︎", "✠︎",
     "✡︎", "☪︎",
 
-    // Symbols 3 ([, \, ], ^, _, `) (6 total)
+    // Symbols 3 ([, \, ], ^, _, `) (6 total | 64 total Wingdings)
     "☯︎", "ॐ︎", "☸︎", "☸︎", "♈︎", "♉︎",
 
-    // Lowercase alphabetical characters (a-z) (26 total)
+    // Lowercase alphabetical characters (a-z) (26 total | 90 total Wingdings)
     "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎", "🙰", "🙵", "●︎",
     "❍︎", "■︎", "□︎", "◻︎", "❑︎", "❒︎", "⬧︎", "⧫︎", "◆︎", "❖︎", "⬥︎", "⌧︎",
     "⍓︎", "⌘︎",
 
-    // Symbols 4 ({, |, }, ~) (4 total)
+    // Symbols 4 ({, |, }, ~) (4 total | 94 total Wingdings)
     "❀︎", "✿︎", "❝︎", "❞︎"};
 
-/* Sorted with stdlib's qsort() with a comparator function of:
+/*
+ * Sorted with stdlib's qsort() with a comparator function of:
  *
- * int cmp(const void *a, const void *b)
+ * int cmp(const void *const a, const void *const b)
  * {
- *     return strcmp(a, b);
+ *   const char *const *char_a = a;
+ *   const char *const *char_b = b;
+ *   return strcmp(*char_a, *char_b);
  * }
  *
  */
 static const char *const sorted_wingdings[] = {
-    "💣︎", "🖃︎", "⬧︎", "☠︎", "📪︎", "⧫︎", "⚐︎", "📫︎", "◆︎", "🏱︎", "📬︎", "❖︎", "✈︎", "⬥︎", "📭︎",
-    "☼︎", "⌧︎", "📁︎", "💧︎", "⍓︎", "📂︎", "❄︎", "⌘︎", "📄︎", "🕆︎", "❀︎", "🗏︎", "✞︎", "✿︎", "🗐︎",
-    "🕈︎", "❝︎", "🗄︎", "❞︎", "✠︎", "⌛︎", "✡︎", "🖮︎", "☪︎", "☯︎", "🖰︎", "ॐ︎", "🖲︎", "☸︎", "☸︎",
-    "🖳︎", "♈︎", "🖴︎", "♉︎", "🖫︎", "♋︎", "🖬︎", "♌︎", "✇︎", "♍︎", "✍︎", "♎︎", "@", "♏︎", "✌︎",
-    "♐︎", "👌︎", "♑︎", "✏︎", "👍︎", "♒︎", "✂︎", "👎︎", "♓︎", "✁︎", "☜︎", "🙰", "👓︎", "☞︎", "🙵",
-    "🕭︎", "●︎", "☝︎", "🕮︎", "❍︎", "☟︎", "■︎", "🕯︎", "✋︎", "□︎", "🕿︎", "☺︎", "◻︎", "😐︎", "✆︎",
-    "❑︎", "🖂︎", "☹︎", "❒︎"};
+    "@", "ॐ︎", "⌘︎", "⌛︎", "⌧︎", "⍓︎", "■︎", "□︎", "◆︎", "●︎", "◻︎", "☜︎",
+    "☝︎", "☞︎", "☟︎", "☠︎", "☪︎", "☯︎", "☸︎", "☸︎", "☹︎", "☺︎", "☼︎", "♈︎",
+    "♉︎", "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎", "⚐︎", "✁︎",
+    "✂︎", "✆︎", "✇︎", "✈︎", "✋︎", "✌︎", "✍︎", "✏︎", "✞︎", "✠︎", "✡︎", "✿︎",
+    "❀︎", "❄︎", "❍︎", "❑︎", "❒︎", "❖︎", "❝︎", "❞︎", "⧫︎", "⬥︎", "⬧︎", "🏱︎",
+    "👌︎", "👍︎", "👎︎", "👓︎", "💣︎", "💧︎", "📁︎", "📂︎", "📄︎", "📪︎", "📫︎", "📬︎",
+    "📭︎", "🕆︎", "🕈︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "🖂︎", "🖃︎", "🖫︎", "🖬︎", "🖮︎",
+    "🖰︎", "🖲︎", "🖳︎", "🖴︎", "🗄︎", "🗏︎", "🗐︎", "😐︎", "🙰", "🙵"};
 
 // output_files[0] is the WINGDINGS OUTPUT FILE (ASCII-to-Wingdings conversion)
 static FILE *output_files[] = {NULL};
@@ -120,23 +132,3 @@ char *ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_str
 char wingdings_char_to_ascii_char(const char *const _wingdings_char);
 
 char *wingdings_to_ascii_str(const char *wingdings_to_translate);
-
-// Used for debugging and/or byte-level analysis of the Wingdings "characters"
-void print_wingdings_bytes(void)
-{
-    FILE *bytes_out = fopen("wingdingbytesfull.txt", "w");
-    for (size_t i = 0; i < NUM_WINGDINGS; i++)
-    {
-        fprintf(bytes_out, "%s: ", wingdings[i]);
-        for (size_t j = 0;; j++)
-        {
-            if (wingdings[i][j] == '\0')
-            {
-                fputc('\n', bytes_out);
-                break;
-            }
-            fprintf(bytes_out, "%d ", (char)wingdings[i][j]);
-        }
-    }
-    fclose(bytes_out);
-}
