@@ -100,6 +100,27 @@ static const char *const sorted_wingdings[] = {
     "📭︎", "🕆︎", "🕈︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "🖂︎", "🖃︎", "🖫︎", "🖬︎", "🖮︎",
     "🖰︎", "🖲︎", "🖳︎", "🖴︎", "🗄︎", "🗏︎", "🗐︎", "😐︎", "🙰", "🙵"};
 
+/*
+ * Since the "sorted" wingdings doesn't have the same indexing as the actual 'wingdings'
+ * pointer-to-array-of-char above, the indexing trick with ASCII_WINGDINGS_OFFSET also
+ * doesn't work.
+ * 
+ * Instead, here's an array of char that corresponds to their respective sorted_wingdings.
+ * 
+ * Yes, I know ']' is repeated. It's probably a mistake I made early on when getting all of
+ * the wingdings together. I'll get to it when I get to it.
+ */
+static const char sorted_wd_to_ascii[] = {
+    '@', '\\', 'z', '6', 'x', 'y', 'n', 'o', 'u', 'l', 'p', 'E',
+    'G', 'F', 'H', 'N', 'Z', '[', ']', ']', 'L', 'J', 'R', '^',
+    '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'O', '#',
+    '"', ')', '>', 'Q', 'I', 'A', '?', '!', 'V', 'X', 'Y', '|',
+    '{', 'T', 'm', 'q', 'r', 'v', '}', '~', 't', 'w', 's', 'P',
+    'B', 'C', 'D', '$', 'M', 'S', '0', '1', '2', ',', '-', '.',
+    '/', 'U', 'W', '%', '&', '\'', '(', '*', '+', '<', '=', '7',
+    '8', '9', ':', ';', '5', '3', '4', 'K', 'j', 'k'};
+    
+
 // output_files[0] is the WINGDINGS OUTPUT FILE (ASCII-to-Wingdings conversion)
 static FILE *output_files[] = {NULL};
 

@@ -64,24 +64,18 @@ char *ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_str
     return buffer;
 }
 
-// Used ONLY in wingdings_char_to_ascii_char() for the usage of bsearch()
-int cmp(const void *const a, const void *const b)
-{
-    const char *const *const char_a = a;
-    const char *const *const char_b = b;
-    return strcmp(*char_a, *char_b);
-}
-
+// Performs a binary search through sorted_wingdings to find the ASCII equivalent for the given
+// Wingdings.
 char wingdings_char_to_ascii_char(const char *const _wingdings_char)
 {
-    const char *const bsearch_finding = bsearch(&_wingdings_char, sorted_wingdings, NUM_WINGDINGS, WINGDINGS_CHAR_MAX_SIZE, cmp);
-
-    printf("%llu\n", (*sorted_wingdings - bsearch_finding) / WINGDINGS_CHAR_MAX_SIZE - ASCII_WINGDINGS_OFFSET);
-
-    for (size_t i = 0; i < NUM_WINGDINGS; i++)
+    for (int min = 0, max = NUM_WINGDINGS; min < max;)
     {
-        if (strcmp(_wingdings_char, wingdings[i]) == 0)
-            return i + ASCII_WINGDINGS_OFFSET;
+        const int mid = (min + max) / 2;
+        const int strcmp_result = strcmp(_wingdings_char, sorted_wingdings[mid]);
+        if (strcmp_result == 0)
+            return sorted_wd_to_ascii[mid];
+
+        strcmp_result > 0 ? (void)(min = mid) : (void)(max = mid);
     }
     return '\0';
 }
