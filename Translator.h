@@ -23,12 +23,11 @@
  * If you have only the value of 'd', you can find its corresponding Wingdings via
  * "wingdings['d' - ASCII_WINGDINGS_OFFSET]".
  */
-#define ASCII_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
+#define ASCII_WINGDINGS_OFFSET (char)(CHAR_MAX - NUM_WINGDINGS)
 
 #define CODE_ENGLISH_TO_WINGDINGS (0)
 #define CODE_WINGDINGS_TO_ENGLISH (1)
 
-#define WINGDINGS_TO_ENG_OUTPUT_FILENAME "WingdingsToEnglish.txt"
 #define ENG_TO_WINGDINGS_OUTPUT_FILENAME "EnglishToWingdings.txt"
 
 #define WINGDINGS_OUTPUT output_files[0]
@@ -36,7 +35,7 @@
 #define SHOULD_CLEAR_OUTPUT_FILES (1)
 
 // The maximum number of bytes to read from one line of input.
-#define MAX_BYTE_READS (4096)
+#define MAX_READABLE_BYTES (4096)
 
 // Preferably keep the below keywords unique enough so that they won't
 // interfere with normal input when the translator picks up input.
@@ -123,28 +122,6 @@ static const char sorted_wd_to_ascii[] = {
 
 // output_files[0] is the WINGDINGS OUTPUT FILE (ASCII-to-Wingdings conversion)
 static FILE *output_files[] = {NULL};
-
-// Returns 0 if the output files were opened successfully.
-// Returns 1 otherwise.
-int open_output_files(void)
-{
-    if (SHOULD_CLEAR_OUTPUT_FILES)
-    {
-        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "w");
-    }
-    else
-    {
-        fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
-    }
-
-    if (!WINGDINGS_OUTPUT)
-    {
-        fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
-        return 1;
-    }
-
-    return 0;
-}
 
 /* - Functions to translate from ASCII to Wingdings and vice versa - */
 

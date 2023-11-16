@@ -38,11 +38,11 @@ static inline int check_if_str_is_keyword(const char *const str)
 
 char *ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_strlen)
 {
-    static char buffer[MAX_BYTE_READS];
+    static char buffer[MAX_READABLE_BYTES];
     size_t buffer_i = 0;
     for (size_t i = 0; i < ascii_strlen; i++)
     {
-        const unsigned char current_char = ascii_str[i];
+        const char current_char = ascii_str[i];
         // For any exceptional characters that don't have a Wingdings counterpart, such as spaces
         if (current_char < ASCII_WINGDINGS_OFFSET)
             buffer[buffer_i++] = current_char;
@@ -70,20 +70,23 @@ char wingdings_char_to_ascii_char(const char *const _wingdings_char)
 {
     for (int min = 0, max = NUM_WINGDINGS; min < max;)
     {
+        if (min >= max)
+            break;
+
         const int mid = (min + max) / 2;
         const int strcmp_result = strcmp(_wingdings_char, sorted_wingdings[mid]);
         if (strcmp_result == 0)
             return sorted_wd_to_ascii[mid];
 
-        strcmp_result > 0 ? (void)(min = mid) : (void)(max = mid);
+        strcmp_result < 0 ? (max = mid) : (min = mid + 1);
     }
+
     return '\0';
 }
 
 char *wingdings_to_ascii_str(const char *wingdings_to_translate)
 {
-    static char ascii_return[MAX_BYTE_READS + 1];
-
+    static char ascii_return[MAX_READABLE_BYTES];
     size_t ascii_return_i = 0;
     for (; ascii_return_i < sizeof(ascii_return) - 1 && *wingdings_to_translate != '\0'; ascii_return_i++)
     {
@@ -99,14 +102,15 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
         case -30:
         case -32:
         {
-            static char wingdings_container[WINGDINGS_CHAR_MAX_SIZE + 1];
+            char wingdings_container[WINGDINGS_CHAR_MAX_SIZE];
             /*
              * For most Wingdings "characters", the final byte in their string representation will be -114.
              * However, bytes -80 and -75 can be the final byte for two edge case Wingdings "characters".
              * The former two bytes also occur abnormally early; their respective parent Wingdings "character"
              * WILL contain 4 bytes compared to the usual 6 or 7.
              */
-            const char *const last_byte = strchr(wingdings_to_translate, -114) ? strchr(wingdings_to_translate, -114) : wingdings_to_translate + 3;
+            const char *const terminator_byte = (strchr(wingdings_to_translate, -114) - wingdings_to_translate) > 7 ? wingdings_to_translate + 3 : strchr(wingdings_to_translate, -114);
+
             /* Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have
              * -114 just smack-dab in the middle of their string representation AND at their end, so strchr() ends up
              * returning the byte that's in the middle of the Wingdings rather than the one at the end.
@@ -117,7 +121,7 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              * (i'll see if i can make this less atrocious later)
              */
 
-            const size_t wingdings_char_size = (*last_byte == -114) && (last_byte - wingdings_to_translate + 1) < 6 ? strchr(wingdings_to_translate + (last_byte - wingdings_to_translate) + 1, -114) - wingdings_to_translate + 1 : last_byte - wingdings_to_translate + 1;
+            const ptrdiff_t wingdings_char_size = (*terminator_byte == -114) && (terminator_byte - wingdings_to_translate) < 5 ? strchr(terminator_byte + 1, -114) - wingdings_to_translate + 1 : terminator_byte - wingdings_to_translate + 1;
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
 
@@ -132,6 +136,26 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
     return ascii_return;
 }
 
+// Returns 0 if the output files were opened successfully.
+// Returns an error code from fopen_s() otherwise.
+static int open_output_files(void)
+{
+    errno_t error_code;
+    if (SHOULD_CLEAR_OUTPUT_FILES)
+    {
+        error_code = fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "w");
+    }
+    else
+    {
+        error_code = fopen_s(&WINGDINGS_OUTPUT, ENG_TO_WINGDINGS_OUTPUT_FILENAME, "a");
+    }
+
+    if (!WINGDINGS_OUTPUT)
+        fputs("Could not open output file (" ENG_TO_WINGDINGS_OUTPUT_FILENAME ")\n", stderr);
+
+    return error_code;
+}
+
 /*
  * This function will prompt the user for English characters to be converted into
  * their respective Wingdings counterpart(s).
@@ -143,7 +167,8 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
  */
 static int translate_eng_to_wingdings(void)
 {
-    // i'll have to figure out a decent way to handle file opening errors, but for now this will do
+    // i'll have to figure out a decent way to handle file opening, but for now this
+    // ugly one-liner will do
     open_output_files();
 
     puts(
@@ -157,7 +182,7 @@ static int translate_eng_to_wingdings(void)
 
         // "- 1" since getStrStdin() returns the string's length including the null terminator,
         // which isn't needed in this case
-        const size_t INPUT_LEN = getStrStdin(&input, MAX_BYTE_READS) - 1;
+        const size_t INPUT_LEN = getStrStdin(&input, MAX_READABLE_BYTES) - 1;
         {
             const int is_keyword = check_if_str_is_keyword(input);
             if (is_keyword == -1)
@@ -194,7 +219,7 @@ static int translate_wingdings_to_eng(void)
         // Using fputs() instead of puts() since puts() appends a newline, and I want the user's
         // input to be on the same line as the "Enter English here: " prompt.
         fputs("Enter the name of a file containing Wingdings: ", stdout);
-        getStrStdin(&input, MAX_BYTE_READS);
+        getStrStdin(&input, MAX_READABLE_BYTES);
         {
             const int is_keyword = check_if_str_is_keyword(input);
             if (is_keyword == -1)
@@ -214,7 +239,7 @@ static int translate_wingdings_to_eng(void)
             {
                 // getStr() returns the length of the string it wrote, which isn't necessarily needed, but it returns 0
                 // upon EOF or similar which can be used as a sort of "status code"
-                if (getStr(&input, '\n', MAX_BYTE_READS, wingdings_input_file) != 0)
+                if (getStr(&input, '\n', MAX_READABLE_BYTES, wingdings_input_file) != 0)
                     puts(wingdings_to_ascii_str(input));
             } while (!feof(wingdings_input_file));
         }
@@ -249,8 +274,8 @@ static int prompt_user_for_translator(void)
 
 int main(void)
 {
-    // "MAX_BYTE_READS + 1" to account for a null terminator
-    input = malloc(MAX_BYTE_READS + 1);
+    // "MAX_READABLE_BYTES + 1" to account for a null terminator
+    input = malloc(MAX_READABLE_BYTES + 1);
     if (!input)
     {
         fputs("Could not allocate memory for input", stderr);
