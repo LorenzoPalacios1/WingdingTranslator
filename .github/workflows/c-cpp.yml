@@ -11,8 +11,10 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - name: addmodules
+      uses: actions/checkout@v3
       with:
-          submodules: 'true'
+       submodules: 'true'
+       
     - name: compile
-    - run: compile.bat
+      run: compile.bat
