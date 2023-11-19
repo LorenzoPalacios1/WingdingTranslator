@@ -109,7 +109,8 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              * The former two bytes also occur abnormally early; their respective parent Wingdings "character"
              * WILL contain 4 bytes compared to the usual 6 or 7.
              */
-            const char *const terminator_byte = (strchr(wingdings_to_translate, -114) - wingdings_to_translate) > 7 ? wingdings_to_translate + 3 : strchr(wingdings_to_translate, -114);
+            const char *const terminator_byte = (strchr(wingdings_to_translate, -114) - wingdings_to_translate + 1) / 2 == 3 ? strchr(wingdings_to_translate, -114) 
+            : wingdings_to_translate + 3;
 
             /* Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have
              * -114 just smack-dab in the middle of their string representation AND at their end, so strchr() ends up
@@ -121,7 +122,8 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              * (i'll see if i can make this less atrocious later)
              */
 
-            const ptrdiff_t wingdings_char_size = (*terminator_byte == -114) && (terminator_byte - wingdings_to_translate) < 5 ? strchr(terminator_byte + 1, -114) - wingdings_to_translate + 1 : terminator_byte - wingdings_to_translate + 1;
+            const ptrdiff_t wingdings_char_size = terminator_byte - wingdings_to_translate + 1;
+            printf("%lld\n", wingdings_char_size);
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
 

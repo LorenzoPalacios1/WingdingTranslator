@@ -125,8 +125,8 @@ static FILE *output_files[] = {NULL};
 
 /* - Functions to translate from ASCII to Wingdings and vice versa - */
 
-char *ascii_str_to_wingdings(const char *const ascii_str, const size_t ascii_strlen);
+char *ascii_str_to_wingdings(const char *ascii_str, const size_t ascii_strlen);
 
-char wingdings_char_to_ascii_char(const char *const _wingdings_char);
+char wingdings_char_to_ascii_char(const char *_wingdings_char);
 
 char *wingdings_to_ascii_str(const char *wingdings_to_translate);
