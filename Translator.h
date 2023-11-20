@@ -47,8 +47,6 @@
 #define CHANGE_TRANSLATOR_KEYWORD "!chg"
 #define CHANGE_TRANSLATOR_STATUS_CODE (11)
 
-#define CASE_SENSITIVE_KEYWORDS 0
-
 // ASCII characters mapped to their respective Wingdings representation.
 static const char *const wingdings[] = {
     // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 total)

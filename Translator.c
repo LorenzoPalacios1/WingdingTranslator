@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <limits.h>
 
 #include "C-MyBasics\MyBasics.h"
@@ -17,20 +17,10 @@ static inline int check_if_str_is_keyword(const char *const str)
     if (str == NULL)
         return -1;
 
-    if (CASE_SENSITIVE_KEYWORDS)
-    {
-        if (strcmp(str, EXIT_KEYWORD) == 0)
-            return EXIT_STATUS_CODE;
-        if (strcmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
-            return CHANGE_TRANSLATOR_STATUS_CODE;
-    }
-    else
-    {
-        if (strcasecmp(str, EXIT_KEYWORD) == 0)
-            return EXIT_STATUS_CODE;
-        if (strcasecmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
-            return CHANGE_TRANSLATOR_STATUS_CODE;
-    }
+    if (strcmp(str, EXIT_KEYWORD) == 0)
+        return EXIT_STATUS_CODE;
+    if (strcmp(str, CHANGE_TRANSLATOR_KEYWORD) == 0)
+        return CHANGE_TRANSLATOR_STATUS_CODE;
     return 0;
 }
 
@@ -109,8 +99,9 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              * The former two bytes also occur abnormally early; their respective parent Wingdings "character"
              * WILL contain 4 bytes compared to the usual 6 or 7.
              */
-            const char *const terminator_byte = (strchr(wingdings_to_translate, -114) - wingdings_to_translate + 1) / 2 == 3 ? strchr(wingdings_to_translate, -114) 
-            : wingdings_to_translate + 3;
+            const char *const terminator_byte = (strchr(wingdings_to_translate, -114) - wingdings_to_translate + 1) / 2 == 3       ? strchr(wingdings_to_translate, -114)
+                                                : (strchr(wingdings_to_translate + 3, -114) - wingdings_to_translate + 1) / 2 == 3 ? strchr(wingdings_to_translate + 3, -114)
+                                                                                                                                   : wingdings_to_translate + 3;
 
             /* Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have
              * -114 just smack-dab in the middle of their string representation AND at their end, so strchr() ends up
