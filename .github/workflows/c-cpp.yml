@@ -7,17 +7,14 @@ on:
     branches: [ "main" ]
 
 jobs:
-
-  a:
+  compile:
     runs-on: windows-latest
+    
     steps:
-      - name: submodules
-        uses: actions/checkout@v3
-        with:
-          submodules: 'true'
-  
-  build:
-    runs-on: windows-latest
-    steps:
-    - name: compile
+    - name: addmodules
+      uses: actions/checkout@v3
+      with:
+       submodules: 'true'
+       
+    - name: run
       run: ./compile.bat
