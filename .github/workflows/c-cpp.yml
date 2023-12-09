@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  compile:
+  tasks:
     runs-on: windows-latest
     
     steps:
@@ -16,5 +16,5 @@ jobs:
       with:
        submodules: 'true'
        
-    - name: run
+    - name: compile
       run: ./compile.bat

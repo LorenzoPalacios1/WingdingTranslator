@@ -103,8 +103,8 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
                                                 : (strchr(wingdings_to_translate + 3, -114) - wingdings_to_translate + 1) / 2 == 3 ? strchr(wingdings_to_translate + 3, -114)
                                                                                                                                    : wingdings_to_translate + 3;
 
-            /* Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have
-             * -114 just smack-dab in the middle of their string representation AND at their end, so strchr() ends up
+            /* Yes, this bit is real obnoxious, but the problem is that some Wingdings "characters" have
+             * -114 in the middle of their string representation AND at their end, so strchr() ends up
              * returning the byte that's in the middle of the Wingdings rather than the one at the end.
              *
              * To be honest, I'll probably end up forgetting what this even does in a day.
@@ -118,6 +118,29 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
             wingdings_container[wingdings_char_size] = '\0';
 
             ascii_return[ascii_return_i] = wingdings_char_to_ascii_char(wingdings_container);
+
+            // This fixes the problem detailed in issue #2 concerning the characters "🙰" and "🙵"
+            // when they precede the character "♎︎".
+            if (ascii_return[ascii_return_i] == '\0'){
+                /*
+                 * Since the two aforementioned Wingdings characters corrupt "♎︎" and leave three
+                 * of its last bytes in wingdings_to_translate, checking for the actual terminator
+                 * byte of "♎︎" is possible. By identifying this terminator byte, the translator
+                 * can backtrack and identify either one of the corrupting Wingdings characters
+                 * and translate it appropriately.
+                 */
+                const char *const terminator_actual = strchr(wingdings_container + wingdings_char_size, -114);
+                if (terminator_actual - wingdings_to_translate == 3){
+                    // The constant (4) is equivalent to the length for the characters "🙰" and "🙵".
+                    strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, 4);
+                    wingdings_container[5] = '\0';
+
+                    ascii_return[ascii_return_i] = wingdings_char_to_ascii_char(wingdings_container);
+
+                    wingdings_to_translate += 4;
+                    break;
+                }
+            }
 
             wingdings_to_translate += wingdings_char_size;
             break;
