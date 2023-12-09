@@ -114,7 +114,6 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              */
 
             const ptrdiff_t wingdings_char_size = terminator_byte - wingdings_to_translate + 1;
-            printf("%lld\n", wingdings_char_size);
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
 
