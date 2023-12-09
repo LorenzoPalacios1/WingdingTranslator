@@ -131,7 +131,7 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
 
 // Returns 0 if the output files were opened successfully.
 // Returns an error code from fopen_s() otherwise.
-static int open_output_files(void)
+static inline int open_output_files(void)
 {
     errno_t error_code;
     if (SHOULD_CLEAR_OUTPUT_FILES)
@@ -186,6 +186,7 @@ static int translate_eng_to_wingdings(void)
                 return is_keyword;
             }
         }
+        
         fputs(ascii_str_to_wingdings(input, INPUT_LEN), WINGDINGS_OUTPUT);
         fputc('\n', WINGDINGS_OUTPUT);
     }
@@ -221,9 +222,7 @@ static int translate_wingdings_to_eng(void)
                 return is_keyword;
         }
 
-        if (fopen_s(&wingdings_input_file, input, "r"))
-            continue;
-
+        if (!fopen_s(&wingdings_input_file, input, "r"))
         {
             // If a pointer is non-null, getStr() assumes it points to allocated memory, and since there is an upper
             // bound to the length of input, we can just allocate that upper bound here rather than allocate and free
