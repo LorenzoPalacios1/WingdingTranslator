@@ -7,17 +7,14 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  compile:
+    runs-on: windows-latest
+    
     steps:
-    - uses: actions/checkout@v3
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: addmodules
+      uses: actions/checkout@v3
+      with:
+       submodules: 'true'
+       
+    - name: run
+      run: ./compile.bat
