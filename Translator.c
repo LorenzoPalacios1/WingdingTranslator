@@ -78,6 +78,7 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
 {
     static char ascii_return[MAX_READABLE_BYTES];
     size_t ascii_return_i = 0;
+    // "sizeof(ascii_return) - 1" to account for a null terminator
     for (; ascii_return_i < sizeof(ascii_return) - 1 && *wingdings_to_translate != '\0'; ascii_return_i++)
     {
         switch (*wingdings_to_translate)
@@ -99,9 +100,8 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              * The former two bytes also occur abnormally early; their respective parent Wingdings "character"
              * WILL contain 4 bytes compared to the usual 6 or 7.
              */
-            const char *const terminator_byte = (strchr(wingdings_to_translate, -114) - wingdings_to_translate + 1) / 2 == 3       ? strchr(wingdings_to_translate, -114)
-                                                : (strchr(wingdings_to_translate + 3, -114) - wingdings_to_translate + 1) / 2 == 3 ? strchr(wingdings_to_translate + 3, -114)
-                                                                                                                                   : wingdings_to_translate + 3;
+            const char *const terminator_byte = (strchr(wingdings_to_translate, -114) - wingdings_to_translate + 1) / 2 == 3 ? strchr(wingdings_to_translate, -114) : (strchr(wingdings_to_translate + 3, -114) - wingdings_to_translate + 1) / 2 == 3 ? strchr(wingdings_to_translate + 3, -114)
+                                                                                                                                                                                                                                                       : wingdings_to_translate + 3;
 
             /* Yes, this bit is real ugly and hard to look at, but the problem is that some Wingdings "characters" have
              * -114 just smack-dab in the middle of their string representation AND at their end, so strchr() ends up
@@ -112,13 +112,32 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
              *
              * (i'll see if i can make this less atrocious later)
              */
-
             const ptrdiff_t wingdings_char_size = terminator_byte - wingdings_to_translate + 1;
-            printf("%lld\n", wingdings_char_size);
             strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, wingdings_char_size);
             wingdings_container[wingdings_char_size] = '\0';
 
             ascii_return[ascii_return_i] = wingdings_char_to_ascii_char(wingdings_container);
+
+            // This fixes the problem detailed in issue #2 concerning the characters "🙰" and "🙵"
+            // when they precede the character "♎︎".
+            if (ascii_return[ascii_return_i] == '\0')
+            {
+                /*
+                 * Since the two aforementioned Wingdings characters leave three of the last bytes
+                 * comprising "♎︎", checking for the actual terminator byte of "♎︎" is possible.
+                 * By identifying this terminator byte, the translator can backtrack and identify
+                 * either one of the preceding problematic Wingdings characters and translate it
+                 * appropriately.
+                 * 
+                 * The constant (4) is equivalent to the length for the characters "🙰" and "🙵".
+                 */
+                strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, 4);
+                wingdings_container[5] = '\0';
+
+                ascii_return[ascii_return_i] = wingdings_char_to_ascii_char(wingdings_container);
+                wingdings_to_translate += 4;
+                break;
+            }
 
             wingdings_to_translate += wingdings_char_size;
             break;
@@ -186,7 +205,7 @@ static int translate_eng_to_wingdings(void)
                 return is_keyword;
             }
         }
-        
+
         fputs(ascii_str_to_wingdings(input, INPUT_LEN), WINGDINGS_OUTPUT);
         fputc('\n', WINGDINGS_OUTPUT);
     }
