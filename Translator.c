@@ -120,6 +120,31 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
 
             ascii_return[ascii_return_i] = wingdings_char_to_ascii_char(wingdings_container);
 
+            // This fixes the problem detailed in issue #2 concerning the characters "🙰" and "🙵"
+            // when they precede the character "♎︎".
+            if (ascii_return[ascii_return_i] == '\0')
+            {
+                /*
+                 * Since the two aforementioned Wingdings characters leave three of the last bytes
+                 * comprising "♎︎", checking for the actual terminator byte of "♎︎" is possible.
+                 * By identifying this terminator byte, the translator can backtrack and identify
+                 * either one of the preceding problematic Wingdings characters and translate it
+                 * appropriately.
+                 */
+                const char *const terminator_actual = strchr(wingdings_container + wingdings_char_size, -114);
+                if (terminator_actual - wingdings_to_translate == 3)
+                {
+                    // The constant (4) is equivalent to the length for the characters "🙰" and "🙵".
+                    strncpy_s(wingdings_container, sizeof(wingdings_container), wingdings_to_translate, 4);
+                    wingdings_container[5] = '\0';
+
+                    ascii_return[ascii_return_i] = wingdings_char_to_ascii_char(wingdings_container);
+
+                    wingdings_to_translate += 4;
+                    break;
+                }
+            }
+
             wingdings_to_translate += wingdings_char_size;
             break;
         }
