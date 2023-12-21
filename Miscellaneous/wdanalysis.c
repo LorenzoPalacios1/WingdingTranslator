@@ -8,6 +8,14 @@
 #include <stdio.h>
 #endif
 
+#ifndef _INC_STDLIB
+#include <stdlib.h>
+#endif
+
+#ifndef _INC_STRING
+#include <string.h>
+#endif
+
 #ifndef _INC_TRANSLATOR
 #include "../Translator.h"
 #endif
@@ -20,7 +28,8 @@
 
 void print_wingdings(void)
 {
-    FILE *const out = fopen(WINGDINGS_OUTPUT_FILENAME, "w");
+    FILE *out;
+    fopen_s(&out, WINGDINGS_OUTPUT_FILENAME, "w");
     for (size_t i = 0; i < NUM_WINGDINGS; i++)
         fprintf(out, "%s\n", wingdings[i]);
 
@@ -29,7 +38,8 @@ void print_wingdings(void)
 
 void print_wingdings_sorted(void)
 {
-    FILE *const out = fopen(SORTED_WINGDINGS_OUTPUT_FILENAME, "w");
+    FILE *out;
+    fopen_s(&out, WINGDINGS_OUTPUT_FILENAME, "w");
 
     for (size_t i = 0; i < NUM_WINGDINGS; i++)
         fprintf(out, "%s\n", sorted_wingdings[i]);
@@ -146,4 +156,22 @@ int *wingdings_as_hashes(const char op)
             hash_container[i] = operation(hash_container[i], *current_wd_char);
     }
     return hash_container;
+}
+
+static int cmp(const void *const a, const void *const b)
+{
+    const char *const *char_a = a;
+    const char *const *char_b = b;
+    return strcmp(*char_a, *char_b);
+}
+
+char **_sort_wingdings(void)
+{
+    static char wd_copy[NUM_WINGDINGS][sizeof(*wingdings)];
+
+    for (size_t i = 0; i < NUM_WINGDINGS; i++)
+        strcpy_s(wd_copy[i], sizeof(*wingdings), wingdings[i]);
+
+    qsort(wd_copy, NUM_WINGDINGS, sizeof(*wingdings), cmp);
+    return (char**)wd_copy;
 }
