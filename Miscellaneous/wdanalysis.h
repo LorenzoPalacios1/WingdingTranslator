@@ -15,23 +15,25 @@
 
 // - Header Guards End -
 
+#define GENERIC_OUTPUT_FILENAME "out.txt"
+
 #define WINGDINGS_OUTPUT_FILENAME "wingdings.txt"
 #define SORTED_WINGDINGS_OUTPUT_FILENAME "sorted_wingdings.txt"
 #define WINGDINGS_BYTES_OUTPUT_FILENAME "wingdings_bytes.txt"
 #define WINGDINGS_BYTES_SORTED_OUTPUT_FILENAME "wingdings_bytes_sorted.txt"
 
-void print_all_wingdings(void)
+void print_wingdings(void)
 {
-    FILE *out = fopen(WINGDINGS_OUTPUT_FILENAME, "w");
+    FILE *const out = fopen(WINGDINGS_OUTPUT_FILENAME, "w");
     for (size_t i = 0; i < NUM_WINGDINGS; i++)
         fprintf(out, "%s\n", wingdings[i]);
 
     fclose(out);
 }
 
-void print_all_wingdings_sorted(void)
+void print_wingdings_sorted(void)
 {
-    FILE *out = fopen(SORTED_WINGDINGS_OUTPUT_FILENAME, "w");
+    FILE *const out = fopen(SORTED_WINGDINGS_OUTPUT_FILENAME, "w");
 
     for (size_t i = 0; i < NUM_WINGDINGS; i++)
         fprintf(out, "%s\n", sorted_wingdings[i]);
@@ -41,7 +43,7 @@ void print_all_wingdings_sorted(void)
 
 void print_wingdings_bytes(void)
 {
-    FILE *bytes_out = fopen(WINGDINGS_BYTES_OUTPUT_FILENAME, "w");
+    FILE *const bytes_out = fopen(WINGDINGS_BYTES_OUTPUT_FILENAME, "w");
 
     for (size_t i = 0; i < NUM_WINGDINGS; i++)
     {
@@ -61,7 +63,7 @@ void print_wingdings_bytes(void)
 
 void print_wingdings_bytes_sorted(void)
 {
-    FILE *bytes_out = fopen(WINGDINGS_BYTES_SORTED_OUTPUT_FILENAME, "w");
+    FILE *const bytes_out = fopen(WINGDINGS_BYTES_SORTED_OUTPUT_FILENAME, "w");
 
     for (size_t i = 0; i < NUM_WINGDINGS; i++)
     {
@@ -77,4 +79,48 @@ void print_wingdings_bytes_sorted(void)
         }
     }
     fclose(bytes_out);
+}
+
+static inline int add(const int a, const int b)
+{
+    return a + b;
+}
+
+static inline int subtract(const int a, const int b)
+{
+    return a - b;
+}
+
+static inline int multiply(const int a, const int b)
+{
+    return a * b;
+}
+
+int string_to_simple_hash(const char *str, const char op)
+{
+    int (*const operation)(int, int) = (op == '+' ? add : op == '-' ? subtract
+                                                        : op == '*' ? multiply
+                                                                    : add);
+
+    int hash_result = 0;
+    while (*(str++) != '\0')
+        hash_result = operation(hash_result, *str);
+
+    return hash_result;
+}
+
+int *wingdings_as_hashes(const char op)
+{
+    int (*const operation)(int, int) = (op == '+' ? add : op == '-' ? subtract
+                                                        : op == '*' ? multiply
+                                                                    : add);
+
+    static int hash_container[NUM_WINGDINGS];
+    for (size_t i = 0; i < sizeof(hash_container); i++)
+    {
+        const char *current_wd_char = wingdings[i];
+        while (*(current_wd_char++) != '\0')
+            hash_container[i] = operation(hash_container[i], *current_wd_char);
+    }
+    return hash_container;
 }
