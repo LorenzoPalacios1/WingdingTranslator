@@ -1,10 +1,10 @@
-# General
+# General ("**/...")
 **/*.exe
 **/*.o
+**/*.txt
 
-# Parent Directory
-.vscode
-*.txt
+# Parent Directory ("/...")
+/.vscode
+/*.txt
 
-# Child Directories
-/**/.txt
+# Child Directories ("/**/...")

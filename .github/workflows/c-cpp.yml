@@ -17,4 +17,4 @@ jobs:
        submodules: 'true'
        
     - name: run
-      run: ./compile.bat
+      run: ./compile.bat 1

@@ -42,5 +42,5 @@ clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal
 exit /b %errorlevel%
 
 :cleanup
-del *.o /f /s /q > nul
+del *.o /f /s /q
 exit /b %RETURN_STATUS%

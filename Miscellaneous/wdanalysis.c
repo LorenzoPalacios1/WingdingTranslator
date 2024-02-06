@@ -3,101 +3,119 @@
  * Wingdings characters used by the translator.
  */
 
-// - Header Guards Begin -
-#ifndef _INC_STDIO
-#include <stdio.h>
-#endif
-
-#ifndef _INC_STDLIB
-#include <stdlib.h>
-#endif
-
-#ifndef _INC_STRING
-#include <string.h>
-#endif
-
-#ifndef _INC_TRANSLATOR
-#include "../Translator.h"
-#endif
-
-#ifndef _INC_WDANALYSIS
+/* - Header Guards Begin - */
 #include "wdanalysis.h"
-#endif
+#include "../Translator.h"
+#include <limits.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-// - Header Guards End -
+/* - Header Guards End - */
 
-void print_wingdings(void)
+void print_wingdings(FILE *const output_stream, const char separator)
 {
-    FILE *out;
-    fopen_s(&out, WINGDINGS_OUTPUT_FILENAME, "w");
-    for (size_t i = 0; i < NUM_WINGDINGS; i++)
-        fprintf(out, "%s\n", wingdings[i]);
-
-    fclose(out);
-}
-
-void print_wingdings_sorted(void)
-{
-    FILE *out;
-    fopen_s(&out, WINGDINGS_OUTPUT_FILENAME, "w");
-
-    for (size_t i = 0; i < NUM_WINGDINGS; i++)
-        fprintf(out, "%s\n", sorted_wingdings[i]);
-
-    fclose(out);
-}
-
-void print_wingdings_bytes(void)
-{
-    FILE *const bytes_out = fopen(WINGDINGS_BYTES_OUTPUT_FILENAME, "w");
-
-    for (size_t i = 0; i < NUM_WINGDINGS; i++)
+    /*
+     * One byte is added in the expression
+     * `...(WINGDINGS_CHAR_SIZE + 1)`
+     * to account for the separator character.
+     *
+     * Then, the final byte as seen in the expression
+     * `...(WINGDINGS_CHAR_SIZE + 1) + 1`
+     * accounts for the null terminator.
+     */
+    char buffer[NUM_WINGDINGS * (WINGDINGS_CHAR_SIZE + 1) + 1];
     {
-        fprintf(bytes_out, "%s: ", wingdings[i]);
-        for (size_t j = 0;; j++)
+        size_t buffer_i = 0;
+        for (size_t wingdings_i = 0; wingdings_i < NUM_WINGDINGS; wingdings_i++)
         {
-            if (wingdings[i][j] == '\0')
-            {
-                fputc('\n', bytes_out);
-                break;
-            }
-            fprintf(bytes_out, "%d ", (int)wingdings[i][j]);
+            buffer_i += sprintf_s(buffer + buffer_i, sizeof(buffer) - buffer_i, "%s", wingdings[wingdings_i]);
+            buffer[buffer_i++] = separator;
         }
+        /*
+         * Subtracting one(1) causes the null terminator to overwrite the
+         * trailing separator character.
+         */
+        buffer[buffer_i - 1] = '\0';
     }
-    fclose(bytes_out);
+    fputs(buffer, output_stream);
 }
 
-void print_wingdings_bytes_sorted(void)
+void print_wingdings_sorted(FILE *const output_stream, const char separator)
 {
-    FILE *const bytes_out = fopen(WINGDINGS_BYTES_SORTED_OUTPUT_FILENAME, "w");
-
-    for (size_t i = 0; i < NUM_WINGDINGS; i++)
+    char buffer[NUM_WINGDINGS * (WINGDINGS_CHAR_SIZE + 1) + 1];
     {
-        fprintf(bytes_out, "%s: ", sorted_wingdings[i]);
-        for (size_t j = 0;; j++)
+        size_t buffer_i = 0;
+        for (size_t wingdings_i = 0; wingdings_i < NUM_WINGDINGS; wingdings_i++)
         {
-            if (sorted_wingdings[i][j] == '\0')
-            {
-                fputc('\n', bytes_out);
-                break;
-            }
-            fprintf(bytes_out, "%d ", (char)sorted_wingdings[i][j]);
+            buffer_i += sprintf_s(buffer + buffer_i, sizeof(buffer) - buffer_i, "%s", sorted_wingdings[wingdings_i]);
+            buffer[buffer_i++] = separator;
         }
+        buffer[buffer_i - 1] = '\0';
     }
-    fclose(bytes_out);
+    fputs(buffer, output_stream);
 }
 
-static inline int add(const int a, const int b)
+void print_wingdings_bytes(FILE *const output_stream, const char line_separator, const char byte_value_separator)
+{
+    /*
+     * The base-10 logarithm of any number plus one is equal to the number of digits
+     * in that number.
+     */
+    char buffer[NUM_WINGDINGS * (WINGDINGS_CHAR_SIZE + 1) * ((size_t)log10(INT_MAX) + 1) + 1];
+    {
+        size_t buffer_i = 0;
+        for (size_t wingdings_i = 0; wingdings_i < NUM_WINGDINGS; wingdings_i++)
+        {
+            const size_t REMAINING_BYTES_IN_BUFFER = sizeof(buffer) - buffer_i;
+            buffer_i += sprintf_s(buffer + buffer_i, REMAINING_BYTES_IN_BUFFER, "%s:", wingdings[wingdings_i]);
+            for (size_t wd_byte_i = 0; wingdings[wingdings_i][wd_byte_i] != '\0'; wd_byte_i++)
+            {
+                buffer[buffer_i++] = byte_value_separator;
+                buffer_i +=
+                    sprintf_s(buffer + buffer_i, sizeof(buffer) - buffer_i, "%d", wingdings[wingdings_i][wd_byte_i]);
+            }
+            buffer[buffer_i++] = line_separator;
+        }
+        buffer[buffer_i - 1] = '\0';
+    }
+    fputs(buffer, output_stream);
+}
+
+void print_wingdings_bytes_sorted(FILE *const output_stream, const char line_separator, const char byte_value_separator)
+{
+    char buffer[NUM_WINGDINGS * (WINGDINGS_CHAR_SIZE + 1) * ((size_t)log10(INT_MAX) + 1) + 1];
+    {
+        size_t buffer_i = 0;
+        for (size_t wingdings_i = 0; wingdings_i < NUM_WINGDINGS; wingdings_i++)
+        {
+            const size_t REMAINING_BYTES_IN_BUFFER = sizeof(buffer) - buffer_i;
+            buffer_i += sprintf_s(buffer + buffer_i, REMAINING_BYTES_IN_BUFFER, "%s:", sorted_wingdings[wingdings_i]);
+            for (size_t wd_byte_i = 0; wingdings[wingdings_i][wd_byte_i] != '\0'; wd_byte_i++)
+            {
+                buffer[buffer_i++] = byte_value_separator;
+                buffer_i += sprintf_s(buffer + buffer_i, sizeof(buffer) - buffer_i, "%d",
+                                      sorted_wingdings[wingdings_i][wd_byte_i]);
+            }
+            buffer[buffer_i++] = line_separator;
+        }
+        buffer[buffer_i - 1] = '\0';
+    }
+    fputs(buffer, output_stream);
+}
+
+static int add(const int a, const int b)
 {
     return a + b;
 }
 
-static inline int subtract(const int a, const int b)
+static int subtract(const int a, const int b)
 {
     return a - b;
 }
 
-static inline int multiply(const int a, const int b)
+static int multiply(const int a, const int b)
 {
     return a * b;
 }
@@ -112,9 +130,7 @@ static inline int multiply(const int a, const int b)
  */
 int string_to_simple_hash(const char *str, const char op)
 {
-    int (*const operation)(int, int) = (op == '+' ? add : op == '-' ? subtract
-                                                      : op == '*'   ? multiply
-                                                                    : add);
+    int (*const operation)(int, int) = (op == '+' ? add : op == '-' ? subtract : op == '*' ? multiply : add);
 
     // The default value for hash_result is 0, which is suited for addition and
     // subtraction, but not multiplication. Therefore, if multiplication is being
@@ -135,9 +151,7 @@ int string_to_simple_hash(const char *str, const char op)
  */
 int *wingdings_as_hashes(const char op)
 {
-    int (*const operation)(int, int) = (op == '+' ? add : op == '-' ? subtract
-                                                      : op == '*'   ? multiply
-                                                                    : add);
+    int (*const operation)(int, int) = (op == '+' ? add : op == '-' ? subtract : op == '*' ? multiply : add);
 
     static int hash_container[NUM_WINGDINGS];
 
@@ -173,5 +187,5 @@ char **_sort_wingdings(void)
         strcpy_s(wd_copy[i], sizeof(*wingdings), wingdings[i]);
 
     qsort(wd_copy, NUM_WINGDINGS, sizeof(*wingdings), cmp);
-    return (char**)wd_copy;
+    return (char **)wd_copy;
 }
