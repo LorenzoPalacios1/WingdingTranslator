@@ -92,7 +92,7 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate)
         case -30:
         case -32:
         {
-            char wingdings_container[WINGDINGS_CHAR_MAX_SIZE];
+            char wingdings_container[WINGDINGS_CHAR_SIZE];
             /*
              * For most Wingdings "characters", the final byte in their string representation will be -114.
              * However, bytes -80 and -75 can be the final byte for two edge case Wingdings "characters".

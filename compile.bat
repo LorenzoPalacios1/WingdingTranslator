@@ -1,5 +1,7 @@
 @echo off
 
+setlocal ENABLEDELAYEDEXPANSION
+
 set arg=%1
 
 if NOT DEFINED arg (
@@ -26,21 +28,20 @@ if %1 EQU %compile_src_id% (
     exit /b 1
 )
 
-
 :compile_all_src_files
 clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -Wno-unused-function -D_FORTIFY_SOURCE=2 *.c "C-MyBasics\*.c" "Miscellaneous\*.c" -c
-set RETURN_STATUS=%errorlevel%
+set RETURN_STATUS=!errorlevel!
 
 :compile_project_only
 clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -D_FORTIFY_SOURCE=2 Translator.c "C-MyBasics\MyBasics.c" -c
 clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -Wno-unused-function -D_FORTIFY_SOURCE=2 "Miscellaneous\wdanalysis.c" -c
-set RETURN_STATUS=%errorlevel%
+set RETURN_STATUS=!errorlevel!
 goto cleanup
 
 :generate_exec
 clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -D_FORTIFY_SOURCE=2 Translator.c "C-MyBasics\MyBasics.c" -o Translator
-exit /b %errorlevel%
+exit /b !errorlevel!
 
 :cleanup
 del *.o /f /s /q
-exit /b %RETURN_STATUS%
+exit /b !RETURN_STATUS!
