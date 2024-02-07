@@ -7,4 +7,5 @@
 /.vscode
 /*.txt
 
-# Child Directories ("/**/...")
+# Child Directories ("**/.../*")
+!**/Pre-generated Files/*
