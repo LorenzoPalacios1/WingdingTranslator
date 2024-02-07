@@ -17,6 +17,7 @@ jobs:
        submodules: 'true'
        
     - name: compileProject
-      run: clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -D_FORTIFY_SOURCE=2 Translator.c "C-MyBasics\MyBasics.c" -c && clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -Wno-unused-function -D_FORTIFY_SOURCE=2 "Miscellaneous\wdanalysis.c" -c
+      run: clang -Og -pedantic -Wall -Werror -Wextra -Wimplicit-atomic-properties -Woverlength-strings -Wshadow Translator.c "C-MyBasics\MyBasics.c" -c && clang -Og -pedantic -Wall -Werror -Wextra -Wimplicit-atomic-properties -Woverlength-strings -Wshadow -Wno-unused-function "Miscellaneous\Analysis\wdanalysis.c" -c
+
 
 

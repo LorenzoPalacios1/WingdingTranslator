@@ -29,12 +29,12 @@ if %1 EQU %compile_src_id% (
 )
 
 :compile_all_src_files
-clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -Wno-unused-function -D_FORTIFY_SOURCE=2 *.c "C-MyBasics\*.c" "Miscellaneous\*.c" -c
+clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -Wno-unused-function -D_FORTIFY_SOURCE=2 *.c "C-MyBasics\*.c" "Miscellaneous\Analysis\.c" -c
 set RETURN_STATUS=!errorlevel!
 
 :compile_project_only
 clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -D_FORTIFY_SOURCE=2 Translator.c "C-MyBasics\MyBasics.c" -c
-clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -Wno-unused-function -D_FORTIFY_SOURCE=2 "Miscellaneous\wdanalysis.c" -c
+clang -fstack-protector-strong -Og -pedantic -Wall -Werror -Wextra -Wfloat-equal -Wformat=2 -Wimplicit-atomic-properties -Wmissing-declarations -Wmissing-prototypes -Woverlength-strings -Wshadow -Wno-unused-function -D_FORTIFY_SOURCE=2 "Miscellaneous\Analysis\wdanalysis.c" -c
 set RETURN_STATUS=!errorlevel!
 goto cleanup
 
