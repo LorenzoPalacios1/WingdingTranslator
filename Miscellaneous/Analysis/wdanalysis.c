@@ -4,7 +4,7 @@
  */
 
 #include "wdanalysis.h"
-#include "../Translator.h"
+#include "../../Translator.h"
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>

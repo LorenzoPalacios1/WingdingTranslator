@@ -8,4 +8,4 @@
 /*.txt
 
 # Child Directories ("**/.../*")
-!**/Pre-generated Files/*
+!**/Analysis Examples/*
