@@ -1,17 +1,11 @@
-// - Header Guards End -
-#ifndef _INC_STDIO
-#include <stdio.h>
-#endif
-
 #ifndef _INC_TRANSLATOR
 #define _INC_TRANSLATOR
-#endif
 
-// - Header Guards End -
+#include <stdio.h>
 
 #define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
-#define WINGDINGS_CHAR_MAX_SIZE (sizeof(*wingdings))
+#define WINGDINGS_CHAR_SIZE (sizeof(*wingdings))
 
 /*
  * This is the offset between a standard ASCII char's value and its corresponding Wingdings character.
@@ -98,9 +92,8 @@ static const char *const sorted_wingdings[] = {
     "🖰︎", "🖲︎", "🖳︎", "🖴︎", "🗄︎", "🗏︎", "🗐︎", "😐︎", "🙰", "🙵"};
 
 /*
- * Since the "sorted" wingdings doesn't have the same indexing as the actual 'wingdings'
- * pointer-to-array-of-char above, the indexing trick with ASCII_WINGDINGS_OFFSET also
- * doesn't work.
+ * Since the "sorted" wingdings doesn't have the same indexing as the unsorted 'wingdings'
+ * above, the indexing trick with ASCII_WINGDINGS_OFFSET also doesn't work.
  * 
  * Instead, here's an array of char that corresponds to their respective sorted_wingdings.
  * 
@@ -128,3 +121,5 @@ char *ascii_str_to_wingdings(const char *ascii_str, const size_t ascii_strlen);
 char wingdings_char_to_ascii_char(const char *_wingdings_char);
 
 char *wingdings_to_ascii_str(const char *wingdings_to_translate);
+
+#endif

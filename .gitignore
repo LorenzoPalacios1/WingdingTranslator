@@ -1,9 +1,11 @@
-# General
-*.exe
+# General ("**/...")
+**/*.exe
+**/*.o
+**/*.txt
 
-# Parent Directory
-.vscode
-
-# Child Directories
+# Parent Directory ("/...")
+/.vscode
 /*.txt
-/Miscellaneous/Wingdings Sorter/*.txt
+
+# Child Directories ("**/.../*")
+!**/Analysis Examples/*

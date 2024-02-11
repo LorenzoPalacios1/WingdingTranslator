@@ -16,5 +16,8 @@ jobs:
       with:
        submodules: 'true'
        
-    - name: run
-      run: ./compile.bat
+    - name: compileProject
+      run: clang -Og -pedantic -Wall -Werror -Wextra -Wimplicit-atomic-properties -Woverlength-strings -Wshadow Translator.c "C-MyBasics\MyBasics.c" -c && clang -Og -pedantic -Wall -Werror -Wextra -Wimplicit-atomic-properties -Woverlength-strings -Wshadow -Wno-unused-function "Miscellaneous\Analysis\wdanalysis.c" -c
+
+
+
