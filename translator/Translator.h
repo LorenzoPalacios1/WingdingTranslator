@@ -1,13 +1,14 @@
-#ifndef _INC_TRANSLATOR
-#define _INC_TRANSLATOR
+#ifndef _WD_TRANSLATOR
+#define _WD_TRANSLATOR
 
-#include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
+
+#include "../C-MyBasics/strext/strext.h"
 
 #define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
 // The maximum size of a singular wingdings character.
-#define WINGDINGS_MAX_SIZE (sizeof(*wingdings))
+#define MAX_WINGDINGS_SIZE (sizeof(*wingdings))
 
 /*
  * This is the offset between a standard ASCII character value and its
@@ -22,7 +23,7 @@
  * corresponding Wingdings character will be:
  * - `wingdings['d' - ASCII_WINGDINGS_OFFSET]`
  */
-#define ASCII_TO_WINGDINGS_OFFSET (char)(CHAR_MAX - NUM_WINGDINGS)
+#define ASCII_TO_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
 
 #define CODE_ENGLISH_TO_WINGDINGS (0)
 #define CODE_WINGDINGS_TO_ENGLISH (1)
@@ -106,9 +107,11 @@ static const char sorted_wd_to_ascii[] = {
     '-', '.',  '/', 'U', 'W', '%', '&', '\'', '(', '*', '+', '<', '=', '7',
     '8', '9',  ':', ';', '5', '3', '4', 'K',  'j', 'k'};
 
-char *ascii_str_to_wingdings(const char *ascii_str, const size_t ascii_strlen);
+string_t *ascii_str_to_wd_str(const string_t *ascii_str);
 
-char wingdings_char_to_ascii_char(const char *_wingdings_char);
+string_t *wd_str_to_ascii_str(const string_t *wd_str);
 
-char *wingdings_to_ascii_str(const char *wingdings_to_translate);
+char wd_char_to_ascii_char(const char *wd_char);
+
+char *ascii_char_to_wd_char(char ascii_char);
 #endif
