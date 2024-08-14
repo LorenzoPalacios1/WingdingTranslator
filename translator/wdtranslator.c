@@ -16,12 +16,13 @@ string_t *ascii_str_to_wd_str(const string_t *const ascii_str) {
     const char current_char = ascii_str->data[i];
     // For any characters that don't have a Wingdings counterpart, such as
     // breaks, spaces, or control characters.
-    
+
     if (current_char < ASCII_TO_WINGDINGS_OFFSET)
       wd_output = append_char(wd_output, current_char);
     else {
-      const char *const wd_char = wingdings[current_char - ASCII_TO_WINGDINGS_OFFSET];
-      wd_output = append_raw_str(wd_output, wd_char);
+      const char *const wd_char =
+          wingdings[current_char - ASCII_TO_WINGDINGS_OFFSET];
+      wd_output = append_raw_str(wd_output, wd_char, strlen(wd_char));
     }
   }
   return wd_output;
@@ -32,34 +33,31 @@ string_t *ascii_str_to_wd_str(const string_t *const ascii_str) {
 char wd_char_to_ascii_char(const char *wd_char) {
   size_t min = 0, max = NUM_WINGDINGS;
   while (min < max) {
-    if (min >= max) return '\0';
+    if (min >= max) break;
     const int mid = (min + max) / 2;
     const int strcmp_result = strcmp(wd_char, sorted_wingdings[mid]);
     if (strcmp_result == 0) return sorted_wd_to_ascii[mid];
     strcmp_result < 0 ? (max = mid) : (min = mid + 1);
   }
+  return '\0';
 }
 
-char *wingdings_to_ascii_str(const char *wingdings_to_translate) {
-  static char ascii_return[TEMP_BUF_SIZE];
-  size_t ascii_return_i = 0;
-  // "sizeof(ascii_return) - 1" to account for a null terminator
-  for (; ascii_return_i < sizeof(ascii_return) - 1 &&
-         *wingdings_to_translate != '\0';
-       ascii_return_i++) {
-    switch (*wingdings_to_translate) {
-      // Anything without a valid Wingdings counterpart can just be thrown into
-      // the returned array
+string_t *wd_str_to_ascii_str(const string_t *const wd_str) {
+  string_t *ascii_return = new_string(BASE_STR_CAPACITY);
+  const char *raw_wd_str = wd_str->data;
+
+  while (*raw_wd_str != '\0') {
+    switch (*raw_wd_str) {
+      // Anything without a valid Wingdings counterpart can be copied as is.
       default:
-        ascii_return[ascii_return_i] = *wingdings_to_translate;
-        wingdings_to_translate++;
+        ascii_return = append_char(ascii_return, *raw_wd_str);
+        raw_wd_str++;
         break;
       // These cases comprise all of the possible first bytes within a single
-      // Wingdings "character".
+      // instance of Wingdings.
       case -16:
       case -30:
       case -32: {
-        char wingdings_container[MAX_WINGDINGS_SIZE];
         /*
          * For most Wingdings "characters", the final byte in their string
          * representation will be -114. However, bytes -80 and -75 can be the
@@ -67,18 +65,13 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate) {
          * bytes also occur abnormally early; their respective parent Wingdings
          * "character" WILL contain 4 bytes compared to the usual 6 or 7.
          */
+        /* clang-format off */
         const char *const terminator_byte =
-            (strchr(wingdings_to_translate, -114) - wingdings_to_translate +
-             1) / 2 ==
-                    3
-                ? strchr(wingdings_to_translate, -114)
-            : (strchr(wingdings_to_translate + 3, -114) -
-               wingdings_to_translate + 1) /
-                        2 ==
-                    3
-                ? strchr(wingdings_to_translate + 3, -114)
-                : wingdings_to_translate + 3;
-
+            (strchr(raw_wd_str, -114) - raw_wd_str + 1) / 2 == 3 ?
+            strchr(raw_wd_str, -114) :
+            (strchr(raw_wd_str + 3, -114) - raw_wd_str + 1) / 2 == 3 ?
+            strchr(raw_wd_str + 3, -114) : raw_wd_str + 3;
+        /* clang-format on */
         /* Yes, this bit is real ugly and hard to look at, but the problem is
          * that some Wingdings "characters" have -114 just smack-dab in the
          * middle of their string representation AND at their end, so strchr()
@@ -91,18 +84,19 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate) {
          *
          * (i'll see if i can make this less atrocious later)
          */
-        const ptrdiff_t wingdings_char_size =
-            terminator_byte - wingdings_to_translate + 1;
+        char wingdings_container[MAX_WINGDINGS_SIZE];
+        const ptrdiff_t wd_char_size =
+            terminator_byte - raw_wd_str + 1;
         strncpy_s(wingdings_container, sizeof(wingdings_container),
-                  wingdings_to_translate, wingdings_char_size);
-        wingdings_container[wingdings_char_size] = '\0';
+                  raw_wd_str, wd_char_size);
+        wingdings_container[wd_char_size] = '\0';
 
-        ascii_return[ascii_return_i] =
-            wd_char_to_ascii_char(wingdings_container);
+        ascii_return = append_char(ascii_return,
+                                   wd_char_to_ascii_char(wingdings_container));
 
         // This fixes the problem detailed in issue #2 concerning the characters
         // "🙰" and "🙵" when they precede the character "♎︎".
-        if (ascii_return[ascii_return_i] == '\0') {
+        if (ascii_return->data[ascii_return->length - 1] == '\0') {
           /*
            * Since the two aforementioned Wingdings characters leave three of
            * the last bytes comprising "♎︎", checking for the actual terminator
@@ -114,21 +108,18 @@ char *wingdings_to_ascii_str(const char *wingdings_to_translate) {
            * and "🙵".
            */
           strncpy_s(wingdings_container, sizeof(wingdings_container),
-                    wingdings_to_translate, 4);
+                    raw_wd_str, 4);
           wingdings_container[5] = '\0';
 
-          ascii_return[ascii_return_i] =
-              wd_char_to_ascii_char(wingdings_container);
-          wingdings_to_translate += 4;
+          ascii_return = append_char(ascii_return, wd_char_to_ascii_char(wingdings_container));
+          raw_wd_str += 4;
           break;
         }
-
-        wingdings_to_translate += wingdings_char_size;
+        raw_wd_str += wd_char_size;
         break;
       }
     }
   }
-  ascii_return[ascii_return_i] = '\0';
   return ascii_return;
 }
 
