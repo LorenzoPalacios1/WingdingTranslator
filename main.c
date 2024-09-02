@@ -36,29 +36,57 @@ static FILE *open_append_stream_from_user(void) {
 
 static action_code_t ascii_to_wd_translator(void) {
   fputs("Enter an output path: ", stdout);
-  FILE *const output = open_append_stream_from_user();
+  FILE *const output_stream = open_append_stream_from_user();
   string_t *ascii_input = new_string(BASE_STR_CAPACITY);
-  string_t *wd_output = new_string(BASE_STR_CAPACITY);
+  string_t *wd_buf = new_string(BASE_STR_CAPACITY);
   while (1) {
-    puts("Enter your ASCII text: ");
+    fputs("Enter your ASCII text: ", stdout);
+    for (char c = getchar(); c != '\n' && c != EOF; c = getchar())
+      ascii_input = append_char(ascii_input, c);
     {
       const action_code_t code = is_keyword(ascii_input->data);
       if (code != ACTION_CODE_NONE) {
         delete_string(ascii_input);
-        fclose(output);
+        delete_string(wd_buf);
+        fclose(output_stream);
         return code;
       }
     }
-
-    string_t *translated_str = ascii_str_to_wd_str(ascii_input->data, wd_output);
-    fputs(translated_str->data, output);
-    delete_string(translated_str);
+    wd_buf = ascii_str_to_wd_str(ascii_input->data, wd_buf);
+    fputs(wd_buf->data, output_stream);
+    fputc('\n', output_stream);
+    fflush(output_stream);
+    erase_string_contents(wd_buf);
+    erase_string_contents(ascii_input);
   }
 }
 
 static void consume_line(FILE *const stream) { while (getc(stream) != '\n'); }
 
-static action_code_t wd_to_ascii_translator(void) {}
+static action_code_t wd_to_ascii_translator(void) {
+  string_t *ascii_input = new_string(BASE_STR_CAPACITY);
+  string_t *wd_buf = new_string(BASE_STR_CAPACITY);
+  while (1) {
+    fputs("Enter a file containing Wingdings: ", stdout);
+    FILE *const output_stream = open_append_stream_from_user();
+    for (char c = getchar(); c != '\n' && c != EOF; c = getchar())
+      ascii_input = append_char(ascii_input, c);
+    {
+      const action_code_t code = is_keyword(ascii_input->data);
+      if (code != ACTION_CODE_NONE) {
+        delete_string(ascii_input);
+        fclose(output_stream);
+        return code;
+      }
+    }
+    wd_buf = ascii_str_to_wd_str(ascii_input->data, wd_buf);
+    fputs(wd_buf->data, output_stream);
+    fputc('\n', output_stream);
+    fflush(output_stream);
+    erase_string_contents(wd_buf);
+    erase_string_contents(ascii_input);
+  }
+}
 /*
  * Prompts the user for the translator they want to use.
  * This function will return either CODE_ENGLISH_TO_WINGDINGS, or
@@ -68,14 +96,13 @@ static action_code_t wd_to_ascii_translator(void) {}
  * until they input something valid.
  */
 static void prompt_user_for_translator(void) {
-  puts("\nChoose your translator:");
-  puts("1. Translate ASCII-to-Wingdings");
-  puts("2. Translate Wingdings-to-ASCII");
-
   while (1) {
+    puts("\nChoose your translator:");
+    puts("1. Translate ASCII-to-Wingdings");
+    puts("2. Translate Wingdings-to-ASCII");
     char buf[2] = {getchar(), '\0'};
     const int user_selection = atoi(buf);
-    consume_line(stdin);
+    if (buf[0] != '\n') consume_line(stdin);
     action_code_t return_status = ACTION_CODE_NONE;
     switch (user_selection) {
       case 1:
@@ -83,6 +110,7 @@ static void prompt_user_for_translator(void) {
         break;
       case 2:
         return_status = wd_to_ascii_translator();
+        break;
     }
     if (return_status == ACTION_CODE_EXIT) return;
   }
