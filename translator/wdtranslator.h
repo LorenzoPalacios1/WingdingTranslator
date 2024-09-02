@@ -2,12 +2,14 @@
 #define _WD_TRANSLATOR
 
 #include <stddef.h>
+#include <limits.h>
 
 #include "../C-MyBasics/strext/strext.h"
 
 #define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
-// The maximum size of a singular wingdings character.
+// The maximum size of a single Wingdings character as stored within
+// `wingdings`.
 #define MAX_WINGDINGS_SIZE (sizeof(*wingdings))
 
 /*
@@ -23,24 +25,8 @@
  * corresponding Wingdings character will be:
  * - `wingdings['d' - ASCII_WINGDINGS_OFFSET]`
  */
-#define ASCII_TO_WINGDINGS_OFFSET (CHAR_MAX - NUM_WINGDINGS)
+#define ASCII_TO_WINGDINGS_OFFSET (char)(CHAR_MAX - NUM_WINGDINGS)
 
-#define CODE_ENGLISH_TO_WINGDINGS (0)
-#define CODE_WINGDINGS_TO_ENGLISH (1)
-
-#define ENG_TO_WINGDINGS_OUTPUT_FILENAME "EnglishToWingdings.txt"
-
-#define SHOULD_CLEAR_OUTPUT_FILES (true)
-
-// Preferably keep the below keywords unique so they're less likely to interfere
-// with normal input.
-#define EXIT_KEYWORD "!exit"
-#define EXIT_STATUS_CODE (10)
-
-#define CHANGE_TRANSLATOR_KEYWORD "!chg"
-#define CHANGE_TRANSLATOR_STATUS_CODE (11)
-
-// ASCII characters mapped to their respective Wingdings representation.
 static const char *const wingdings[] = {
     // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 listed)
     "✏︎", "✂︎", "✁︎", "👓︎", "🕭︎", "🕮︎", "🕯︎", "🕿︎", "✆︎", "🖂︎", "🖃︎", "📪︎", "📫︎",
@@ -50,7 +36,7 @@ static const char *const wingdings[] = {
     "📁︎", "📂︎", "📄︎", "🗏︎", "🗐︎", "🗄︎", "⌛︎", "🖮︎", "🖰︎", "🖲︎",
 
     // Symbols 2 (:, ;, <, =, >, ?, @) (7 listed | 32 total Wingdings)
-    // '@' has no Wingdings equivalent - it's here only for the sake of
+    // '@' has no Wingdings equivalent - it's here only as filler for
     // compatibility
     "🖳︎", "🖴︎", "🖫︎", "🖬︎", "✇︎", "✍︎", "@",
 
@@ -107,11 +93,18 @@ static const char sorted_wd_to_ascii[] = {
     '-', '.',  '/', 'U', 'W', '%', '&', '\'', '(', '*', '+', '<', '=', '7',
     '8', '9',  ':', ';', '5', '3', '4', 'K',  'j', 'k'};
 
-string_t *ascii_str_to_wd_str(const string_t *ascii_str);
+string_t *ascii_str_to_wd_str(const char *ascii_str, string_t *wd_output);
 
 string_t *wd_str_to_ascii_str(const string_t *wd_str);
 
 char wd_char_to_ascii_char(const char *wd_char);
 
-char *ascii_char_to_wd_char(char ascii_char);
+/*
+ * Performs a binary search through sorted_wingdings to find the ASCII
+ * equivalent for the given Wingdings.
+ *
+ * @return A `string_t` object containing the corresponding Wingdings for
+ * `ascii_char`. If there is no corresponding Wingdings, `NULL` is returned.
+ */
+string_t *ascii_char_to_wd_char(char ascii_char);
 #endif

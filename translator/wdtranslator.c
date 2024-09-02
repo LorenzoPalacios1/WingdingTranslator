@@ -1,6 +1,5 @@
 #include "wdtranslator.h"
 
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,35 +8,37 @@
 #include "../C-MyBasics/randomgen/randomgen.h"
 #include "../C-MyBasics/strext/strext.h"
 
-string_t *ascii_str_to_wd_str(const string_t *const ascii_str) {
-  const size_t ASCII_STR_LEN = ascii_str->length;
-  string_t *wd_output = new_string(BASE_STR_CAPACITY);
-  for (size_t i = 0; i < ASCII_STR_LEN; i++) {
-    const char current_char = ascii_str->data[i];
-    // For any characters that don't have a Wingdings counterpart, such as
-    // breaks, spaces, or control characters.
+string_t *ascii_char_to_wd_char(const char ascii_char) {
+  if (ascii_char > ASCII_TO_WINGDINGS_OFFSET)
+    return new_string(wingdings[ascii_char - ASCII_TO_WINGDINGS_OFFSET]);
+  return NULL;
+}
 
-    if (current_char < ASCII_TO_WINGDINGS_OFFSET)
-      wd_output = append_char(wd_output, current_char);
-    else {
+string_t *ascii_str_to_wd_str(const char *ascii_str, string_t *wd_output) {
+  for (size_t i = 0; ascii_str[i] != '\0'; i++) {
+    const char current_char = ascii_str[i];
+    if (current_char > ASCII_TO_WINGDINGS_OFFSET) {
       const char *const wd_char =
           wingdings[current_char - ASCII_TO_WINGDINGS_OFFSET];
       wd_output = append_raw_str(wd_output, wd_char, strlen(wd_char));
-    }
+    } else
+      wd_output = append_char(wd_output, current_char);
   }
   return wd_output;
 }
 
-// Performs a binary search through sorted_wingdings to find the ASCII
-// equivalent for the given Wingdings.
 char wd_char_to_ascii_char(const char *wd_char) {
   size_t min = 0, max = NUM_WINGDINGS;
   while (min < max) {
     if (min >= max) break;
-    const int mid = (min + max) / 2;
-    const int strcmp_result = strcmp(wd_char, sorted_wingdings[mid]);
-    if (strcmp_result == 0) return sorted_wd_to_ascii[mid];
-    strcmp_result < 0 ? (max = mid) : (min = mid + 1);
+    const size_t mid = (min + max) / 2;
+    const int cmp_result = strcmp(wd_char, sorted_wingdings[mid]);
+    if (cmp_result < 0)
+      max = mid;
+    else if (cmp_result > 0)
+      min = mid + 1;
+    else
+      return sorted_wd_to_ascii[mid];
   }
   return '\0';
 }
@@ -85,10 +86,9 @@ string_t *wd_str_to_ascii_str(const string_t *const wd_str) {
          * (i'll see if i can make this less atrocious later)
          */
         char wingdings_container[MAX_WINGDINGS_SIZE];
-        const ptrdiff_t wd_char_size =
-            terminator_byte - raw_wd_str + 1;
-        strncpy_s(wingdings_container, sizeof(wingdings_container),
-                  raw_wd_str, wd_char_size);
+        const ptrdiff_t wd_char_size = terminator_byte - raw_wd_str + 1;
+        strncpy_s(wingdings_container, sizeof(wingdings_container), raw_wd_str,
+                  wd_char_size);
         wingdings_container[wd_char_size] = '\0';
 
         ascii_return = append_char(ascii_return,
@@ -111,7 +111,8 @@ string_t *wd_str_to_ascii_str(const string_t *const wd_str) {
                     raw_wd_str, 4);
           wingdings_container[5] = '\0';
 
-          ascii_return = append_char(ascii_return, wd_char_to_ascii_char(wingdings_container));
+          ascii_return = append_char(
+              ascii_return, wd_char_to_ascii_char(wingdings_container));
           raw_wd_str += 4;
           break;
         }
@@ -122,26 +123,3 @@ string_t *wd_str_to_ascii_str(const string_t *const wd_str) {
   }
   return ascii_return;
 }
-
-/*
- * This function will prompt the user for English characters to be converted
- * into their respective Wingdings counterpart(s).
- *
- * If no equivalent exists, the entered character will remain unmodified in the
- * output retaining its relative position.
- *
- * If `EXIT_KEYWORD` or `CHANGE_TRANSLATOR_KEYWORD` are entered, this function
- * will terminate its translation loop and return the respective status code.
- */
-char *translate_eng_to_wingdings(void) {}
-
-/*
- * Container function for the translation loop
- * This function will prompt the user for Wingdings characters to be converted
- * into English characters, if possible.
- * If no equivalent exists, the entered character will remain in the output.
- *
- * If EXIT_KEYWORD or CHANGE_TRANSLATOR_KEYWORD are entered, this function will
- * terminate the translation loop and return the respective status code.
- */
-char *translate_wingdings_to_eng(void) {}
