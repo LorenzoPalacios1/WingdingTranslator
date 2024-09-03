@@ -69,10 +69,9 @@ static action_code_t wd_to_ascii_translator(void) {
   while (1) {
     fputs("Enter a file containing Wingdings: ", stdout);
     FILE *const input_stream = open_stream_from_user("r");
-    for (char c = getc(input_stream); c != EOF; c = getc(input_stream)){
+    char c = getc(input_stream);
+    for (; c != EOF; c = getc(input_stream))
       wd_input = append_char(wd_input, c);
-      putchar('a');
-    }
     {
       const action_code_t code = is_keyword(wd_input->data);
       if (code != ACTION_CODE_NONE) {
@@ -83,6 +82,7 @@ static action_code_t wd_to_ascii_translator(void) {
       }
     }
     ascii_buf = wd_str_to_ascii_str(wd_input->data, ascii_buf);
+    puts(ascii_buf->data);
     erase_string_contents(ascii_buf);
     erase_string_contents(wd_input);
     fclose(input_stream);
