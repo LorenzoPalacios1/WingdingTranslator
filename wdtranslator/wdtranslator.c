@@ -104,8 +104,8 @@ string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output) {
            * The constant (4) is equivalent to the length for the characters "🙰"
            * and "🙵".
            */
-          strncpy_s(wingdings_container, sizeof(wingdings_container),
-                    wd_str, 4);
+          strncpy_s(wingdings_container, sizeof(wingdings_container), wd_str,
+                    4);
           wingdings_container[5] = '\0';
 
           ascii_output = append_char(

@@ -67,20 +67,29 @@ static action_code_t wd_to_ascii_translator(void) {
   string_t *wd_input = new_string(BASE_STR_CAPACITY);
   string_t *ascii_buf = new_string(BASE_STR_CAPACITY);
   while (1) {
-    fputs("Enter a file containing Wingdings: ", stdout);
-    FILE *const input_stream = open_stream_from_user("r");
-    char c = getc(input_stream);
-    for (; c != EOF; c = getc(input_stream))
-      wd_input = append_char(wd_input, c);
+    FILE *input_stream;
     {
-      const action_code_t code = is_keyword(wd_input->data);
+      /*
+       * `open_stream_from_user()` is inlined here with a few tweaks in order to
+       * check for keywords.
+       */
+      fputs("Enter a file containing Wingdings: ", stdout);
+      char filepath_buf[FILEPATH_MAX_LENGTH];
+      for (size_t i = 0; i < sizeof(filepath_buf); i++) {
+        const char c = getchar();
+        if (c == '\n' || c == EOF) break;
+        filepath_buf[i] = c;
+      }
+      const action_code_t code = is_keyword(filepath_buf);
       if (code != ACTION_CODE_NONE) {
         delete_string(wd_input);
         delete_string(ascii_buf);
-        fclose(input_stream);
         return code;
       }
+      input_stream = fopen(filepath_buf, "r");
     }
+    for (char c = getc(input_stream); c != EOF; c = getc(input_stream))
+      wd_input = append_char(wd_input, c);
     ascii_buf = wd_str_to_ascii_str(wd_input->data, ascii_buf);
     puts(ascii_buf->data);
     erase_string_contents(ascii_buf);
@@ -101,7 +110,7 @@ static void prompt_user_for_translator(void) {
     puts("\nChoose your translator:");
     puts("1. Translate ASCII-to-Wingdings");
     puts("2. Translate Wingdings-to-ASCII");
-    char buf[2] = {getchar(), '\0'};
+    char buf[] = {getchar(), '\0'};
     const int user_selection = atoi(buf);
     if (buf[0] != '\n') consume_line(stdin);
     action_code_t return_status = ACTION_CODE_NONE;
