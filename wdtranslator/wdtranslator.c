@@ -45,6 +45,7 @@ char wd_char_to_ascii_char(const char *wd_char) {
 
 string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output) {
   while (*wd_str != '\0') {
+    putchar('a');
     switch (*wd_str) {
       // Anything without a valid Wingdings counterpart can be copied as is.
       default:
@@ -84,6 +85,7 @@ string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output) {
          */
         char wingdings_container[MAX_WINGDINGS_SIZE];
         const ptrdiff_t wd_char_size = terminator_byte - wd_str + 1;
+        printf("%lld\n", wd_char_size);
         strncpy_s(wingdings_container, sizeof(wingdings_container), wd_str,
                   wd_char_size);
         wingdings_container[wd_char_size] = '\0';

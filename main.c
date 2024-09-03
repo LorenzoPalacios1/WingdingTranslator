@@ -24,19 +24,19 @@ static action_code_t is_keyword(const char *const str) {
   return ACTION_CODE_NONE;
 }
 
-static FILE *open_append_stream_from_user(void) {
+static FILE *open_stream_from_user(const char *const mode) {
   char filepath_buf[FILEPATH_MAX_LENGTH];
   for (size_t i = 0; i < sizeof(filepath_buf); i++) {
     const char c = getchar();
     if (c == '\n' || c == EOF) break;
     filepath_buf[i] = c;
   }
-  return fopen(filepath_buf, "a");
+  return fopen(filepath_buf, mode);
 }
 
 static action_code_t ascii_to_wd_translator(void) {
   fputs("Enter an output path: ", stdout);
-  FILE *const output_stream = open_append_stream_from_user();
+  FILE *const output_stream = open_stream_from_user("a");
   string_t *ascii_input = new_string(BASE_STR_CAPACITY);
   string_t *wd_buf = new_string(BASE_STR_CAPACITY);
   while (1) {
@@ -68,24 +68,24 @@ static action_code_t wd_to_ascii_translator(void) {
   string_t *ascii_buf = new_string(BASE_STR_CAPACITY);
   while (1) {
     fputs("Enter a file containing Wingdings: ", stdout);
-    FILE *const output_stream = open_append_stream_from_user();
-    for (char c = getchar(); c != '\n' && c != EOF; c = getchar())
+    FILE *const input_stream = open_stream_from_user("r");
+    for (char c = getc(input_stream); c != EOF; c = getc(input_stream)){
       wd_input = append_char(wd_input, c);
+      putchar('a');
+    }
     {
       const action_code_t code = is_keyword(wd_input->data);
       if (code != ACTION_CODE_NONE) {
         delete_string(wd_input);
-        fclose(output_stream);
+        delete_string(ascii_buf);
+        fclose(input_stream);
         return code;
       }
     }
-    wd_str_to_ascii_str(wd_input);
-    ascii_buf = ascii_str_to_wd_str(wd_input->data, ascii_buf);
-    fputs(ascii_buf->data, output_stream);
-    fputc('\n', output_stream);
-    fflush(output_stream);
+    ascii_buf = wd_str_to_ascii_str(wd_input->data, ascii_buf);
     erase_string_contents(ascii_buf);
     erase_string_contents(wd_input);
+    fclose(input_stream);
   }
 }
 /*
