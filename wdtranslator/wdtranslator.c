@@ -43,16 +43,13 @@ char wd_char_to_ascii_char(const char *wd_char) {
   return '\0';
 }
 
-string_t *wd_str_to_ascii_str(const string_t *const wd_str) {
-  string_t *ascii_return = new_string(BASE_STR_CAPACITY);
-  const char *raw_wd_str = wd_str->data;
-
-  while (*raw_wd_str != '\0') {
-    switch (*raw_wd_str) {
+string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output) {
+  while (*wd_str != '\0') {
+    switch (*wd_str) {
       // Anything without a valid Wingdings counterpart can be copied as is.
       default:
-        ascii_return = append_char(ascii_return, *raw_wd_str);
-        raw_wd_str++;
+        ascii_output = append_char(ascii_output, *wd_str);
+        wd_str++;
         break;
       // These cases comprise all of the possible first bytes within a single
       // instance of Wingdings.
@@ -68,10 +65,10 @@ string_t *wd_str_to_ascii_str(const string_t *const wd_str) {
          */
         /* clang-format off */
         const char *const terminator_byte =
-            (strchr(raw_wd_str, -114) - raw_wd_str + 1) / 2 == 3 ?
-            strchr(raw_wd_str, -114) :
-            (strchr(raw_wd_str + 3, -114) - raw_wd_str + 1) / 2 == 3 ?
-            strchr(raw_wd_str + 3, -114) : raw_wd_str + 3;
+            (strchr(wd_str, -114) - wd_str + 1) / 2 == 3 ?
+            strchr(wd_str, -114) :
+            (strchr(wd_str + 3, -114) - wd_str + 1) / 2 == 3 ?
+            strchr(wd_str + 3, -114) : wd_str + 3;
         /* clang-format on */
         /* Yes, this bit is real ugly and hard to look at, but the problem is
          * that some Wingdings "characters" have -114 just smack-dab in the
@@ -86,17 +83,17 @@ string_t *wd_str_to_ascii_str(const string_t *const wd_str) {
          * (i'll see if i can make this less atrocious later)
          */
         char wingdings_container[MAX_WINGDINGS_SIZE];
-        const ptrdiff_t wd_char_size = terminator_byte - raw_wd_str + 1;
-        strncpy_s(wingdings_container, sizeof(wingdings_container), raw_wd_str,
+        const ptrdiff_t wd_char_size = terminator_byte - wd_str + 1;
+        strncpy_s(wingdings_container, sizeof(wingdings_container), wd_str,
                   wd_char_size);
         wingdings_container[wd_char_size] = '\0';
 
-        ascii_return = append_char(ascii_return,
+        ascii_output = append_char(ascii_output,
                                    wd_char_to_ascii_char(wingdings_container));
 
         // This fixes the problem detailed in issue #2 concerning the characters
         // "🙰" and "🙵" when they precede the character "♎︎".
-        if (ascii_return->data[ascii_return->length - 1] == '\0') {
+        if (ascii_output->data[ascii_output->length - 1] == '\0') {
           /*
            * Since the two aforementioned Wingdings characters leave three of
            * the last bytes comprising "♎︎", checking for the actual terminator
@@ -108,18 +105,18 @@ string_t *wd_str_to_ascii_str(const string_t *const wd_str) {
            * and "🙵".
            */
           strncpy_s(wingdings_container, sizeof(wingdings_container),
-                    raw_wd_str, 4);
+                    wd_str, 4);
           wingdings_container[5] = '\0';
 
-          ascii_return = append_char(
-              ascii_return, wd_char_to_ascii_char(wingdings_container));
-          raw_wd_str += 4;
+          ascii_output = append_char(
+              ascii_output, wd_char_to_ascii_char(wingdings_container));
+          wd_str += 4;
           break;
         }
-        raw_wd_str += wd_char_size;
+        wd_str += wd_char_size;
         break;
       }
     }
   }
-  return ascii_return;
+  return ascii_output;
 }

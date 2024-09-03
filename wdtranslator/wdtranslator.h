@@ -1,8 +1,8 @@
 #ifndef _WD_TRANSLATOR
 #define _WD_TRANSLATOR
 
-#include <stddef.h>
 #include <limits.h>
+#include <stddef.h>
 
 #include "../C-MyBasics/strext/strext.h"
 
@@ -95,7 +95,7 @@ static const char sorted_wd_to_ascii[] = {
 
 string_t *ascii_str_to_wd_str(const char *ascii_str, string_t *wd_output);
 
-string_t *wd_str_to_ascii_str(const string_t *wd_str);
+string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output);
 
 char wd_char_to_ascii_char(const char *wd_char);
 

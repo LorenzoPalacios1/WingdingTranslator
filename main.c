@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "C-MyBasics/strext/strext.h"
-#include "translator/wdtranslator.h"
+#include "wdtranslator/wdtranslator.h"
 
 #define KEYWORD_EXIT "!exit"
 #define KEYWORD_SWITCH "!chg"
@@ -64,27 +64,28 @@ static action_code_t ascii_to_wd_translator(void) {
 static void consume_line(FILE *const stream) { while (getc(stream) != '\n'); }
 
 static action_code_t wd_to_ascii_translator(void) {
-  string_t *ascii_input = new_string(BASE_STR_CAPACITY);
-  string_t *wd_buf = new_string(BASE_STR_CAPACITY);
+  string_t *wd_input = new_string(BASE_STR_CAPACITY);
+  string_t *ascii_buf = new_string(BASE_STR_CAPACITY);
   while (1) {
     fputs("Enter a file containing Wingdings: ", stdout);
     FILE *const output_stream = open_append_stream_from_user();
     for (char c = getchar(); c != '\n' && c != EOF; c = getchar())
-      ascii_input = append_char(ascii_input, c);
+      wd_input = append_char(wd_input, c);
     {
-      const action_code_t code = is_keyword(ascii_input->data);
+      const action_code_t code = is_keyword(wd_input->data);
       if (code != ACTION_CODE_NONE) {
-        delete_string(ascii_input);
+        delete_string(wd_input);
         fclose(output_stream);
         return code;
       }
     }
-    wd_buf = ascii_str_to_wd_str(ascii_input->data, wd_buf);
-    fputs(wd_buf->data, output_stream);
+    wd_str_to_ascii_str(wd_input);
+    ascii_buf = ascii_str_to_wd_str(wd_input->data, ascii_buf);
+    fputs(ascii_buf->data, output_stream);
     fputc('\n', output_stream);
     fflush(output_stream);
-    erase_string_contents(wd_buf);
-    erase_string_contents(ascii_input);
+    erase_string_contents(ascii_buf);
+    erase_string_contents(wd_input);
   }
 }
 /*
