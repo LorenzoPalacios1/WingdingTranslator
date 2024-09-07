@@ -6,26 +6,35 @@
 
 #include "../C-MyBasics/strext/strext.h"
 
-#define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
-
-// The maximum size of a single Wingdings character as stored within
-// `wingdings`.
-#define MAX_WINGDINGS_SIZE (sizeof(*wingdings))
-
 /*
  * This is the offset between a standard ASCII character value and its
- * corresponding Wingdings character.
+ * corresponding Wingdings.
  *
- * Subtract a character by this value when indexing `wingdings` to get its
- * Wingdings counterpart, or add this value to a valid index of wingdings[] to
- * get the indexed Wingdings's ASCII equivalent.
+ * Subtract an ASCII character by this value when indexing `wingdings` to get
+ * its Wingdings counterpart, or add this value to a valid index of `wingdings`
+ * to get the indexed Wingdings's ASCII equivalent.
  *
- * Usage example: Consider the character 'd', ASCII value 100. 'd' corresponds
- * to the '♎︎' Wingdings symbol, index 68. Considering the value of 'd', its
- * corresponding Wingdings character will be:
- * - `wingdings['d' - ASCII_WINGDINGS_OFFSET]`
+ * ### Example:
+ * Consider the ASCII character `'d'` whose ASCII value is `100`. `'d'`
+ * corresponds to the '♎︎' Wingdings, which is stored at `wingdings[68]`.
+ * The corresponding Wingdings for `'d'` can be algorithmically found within
+ * `wingdings` like so:
+ *
+ * - `wingdings['d' - ASCII_TO_WD_OFFSET]`
  */
-#define ASCII_TO_WINGDINGS_OFFSET (char)(CHAR_MAX - NUM_WINGDINGS)
+#define ASCII_TO_WD_OFFSET (char)(CHAR_MAX - NUM_WINGDINGS)
+
+/*
+ * The maximum size of a Wingdings stored within `wingdings`.
+ * This includes padding bytes.
+ */
+#define MAX_WINGDINGS_SIZE (sizeof(*wingdings))
+
+/* The number of elements in `wingdings`. */
+#define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
+
+/* The common terminating byte for Wingdings. */
+#define WD_TERM_VAL (-114)
 
 static const char *const wingdings[] = {
     // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 listed)
@@ -55,7 +64,7 @@ static const char *const wingdings[] = {
     "❀︎", "✿︎", "❝︎", "❞︎"};
 
 /*
- * Sorted with stdlib.h `qsort()` with a comparator function of:
+ * Sorted with `stdlib.h qsort()` with a comparator function of:
  *
  * int cmp(const void *const a, const void *const b)
  * {
@@ -93,12 +102,6 @@ static const char sorted_wd_to_ascii[] = {
     '-', '.',  '/', 'U', 'W', '%', '&', '\'', '(', '*', '+', '<', '=', '7',
     '8', '9',  ':', ';', '5', '3', '4', 'K',  'j', 'k'};
 
-string_t *ascii_str_to_wd_str(const char *ascii_str, string_t *wd_output);
-
-string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output);
-
-char wd_char_to_ascii_char(const char *wd_char);
-
 /*
  * Performs a binary search through sorted_wingdings to find the ASCII
  * equivalent for the given Wingdings.
@@ -107,4 +110,13 @@ char wd_char_to_ascii_char(const char *wd_char);
  * `ascii_char`. If there is no corresponding Wingdings, `NULL` is returned.
  */
 string_t *ascii_char_to_wd_char(char ascii_char);
+
+string_t *ascii_str_to_wd_str(const char *ascii_str, string_t *wd_output);
+
+int get_sorted_wd_char_index(const char *const wd_char);
+
+string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output);
+
+char wd_char_to_ascii_char(const char *wd_char);
+
 #endif
