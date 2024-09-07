@@ -5,6 +5,9 @@
 #include "C-MyBasics/strext/strext.h"
 #include "wdtranslator/wdtranslator.h"
 
+#define CODE_ASCII_TO_WD (1)
+#define CODE_WD_TO_ASCII (2)
+
 #define KEYWORD_EXIT "!exit"
 #define KEYWORD_SWITCH "!chg"
 #define ACTION_CODE_NONE (-1)
@@ -16,6 +19,7 @@
 
 #define FILEPATH_MAX_LENGTH (4096)
 
+typedef int translator_code_t;
 typedef int action_code_t;
 
 static action_code_t is_keyword(const char *const str) {
@@ -28,7 +32,10 @@ static FILE *open_stream_from_user(const char *const mode) {
   char filepath_buf[FILEPATH_MAX_LENGTH];
   for (size_t i = 0; i < sizeof(filepath_buf); i++) {
     const char c = getchar();
-    if (c == '\n' || c == EOF) break;
+    if (c == '\n' || c == EOF) {
+      filepath_buf[i] = '\0';
+      break;
+    }
     filepath_buf[i] = c;
   }
   return fopen(filepath_buf, mode);
@@ -61,7 +68,9 @@ static action_code_t ascii_to_wd_translator(void) {
   }
 }
 
-static void consume_line(FILE *const stream) { while (getc(stream) != '\n'); }
+static inline void consume_line(FILE *const stream) {
+  while (getc(stream) != '\n');
+}
 
 static action_code_t wd_to_ascii_translator(void) {
   string_t *wd_input = new_string(BASE_STR_CAPACITY);
@@ -77,7 +86,10 @@ static action_code_t wd_to_ascii_translator(void) {
       char filepath_buf[FILEPATH_MAX_LENGTH];
       for (size_t i = 0; i < sizeof(filepath_buf); i++) {
         const char c = getchar();
-        if (c == '\n' || c == EOF) break;
+        if (c == '\n' || c == EOF) {
+          filepath_buf[i] = '\0';
+          break;
+        }
         filepath_buf[i] = c;
       }
       const action_code_t code = is_keyword(filepath_buf);
@@ -87,6 +99,10 @@ static action_code_t wd_to_ascii_translator(void) {
         return code;
       }
       input_stream = fopen(filepath_buf, "r");
+      if (input_stream == NULL) {
+        puts("The entered file or path was invalid.");
+        continue;
+      }
     }
     for (char c = getc(input_stream); c != EOF; c = getc(input_stream))
       wd_input = append_char(wd_input, c);
@@ -97,6 +113,7 @@ static action_code_t wd_to_ascii_translator(void) {
     fclose(input_stream);
   }
 }
+
 /*
  * Prompts the user for the translator they want to use.
  * This function will return either CODE_ENGLISH_TO_WINGDINGS, or
@@ -105,28 +122,32 @@ static action_code_t wd_to_ascii_translator(void) {
  * If the user inputs something invalid, the function will prompt the user again
  * until they input something valid.
  */
-static void prompt_user_for_translator(void) {
+static translator_code_t prompt_for_translator(void) {
   while (1) {
     puts("\nChoose your translator:");
     puts("1. Translate ASCII-to-Wingdings");
     puts("2. Translate Wingdings-to-ASCII");
     char buf[] = {getchar(), '\0'};
-    const int user_selection = atoi(buf);
+    const translator_code_t user_selection = atoi(buf);
     if (buf[0] != '\n') consume_line(stdin);
-    action_code_t return_status = ACTION_CODE_NONE;
-    switch (user_selection) {
-      case 1:
-        return_status = ascii_to_wd_translator();
-        break;
-      case 2:
-        return_status = wd_to_ascii_translator();
-        break;
-    }
-    if (return_status == ACTION_CODE_EXIT) return;
+    if (user_selection == CODE_ASCII_TO_WD ||
+        user_selection == CODE_WD_TO_ASCII)
+      return user_selection;
   }
 }
 
 int main(void) {
-  prompt_user_for_translator();
+  action_code_t return_status = ACTION_CODE_NONE;
+  do {
+    const translator_code_t selection = prompt_for_translator();
+    switch (selection) {
+      case CODE_ASCII_TO_WD:
+        return_status = ascii_to_wd_translator();
+        break;
+      case CODE_WD_TO_ASCII:
+        return_status = wd_to_ascii_translator();
+        break;
+    }
+  } while (return_status == ACTION_CODE_SWITCH);
   return 0;
 }
