@@ -17,7 +17,7 @@
  * ### Example:
  * Consider the ASCII character `'d'` whose ASCII value is `100`. `'d'`
  * corresponds to the '♎︎' Wingdings, which is stored at `wingdings[68]`.
- * The corresponding Wingdings for `'d'` can be algorithmically found within
+ * The corresponding Wingdings for `'d'` can be found algorithmically within
  * `wingdings` like so:
  *
  * - `wingdings['d' - ASCII_TO_WD_OFFSET]`
@@ -34,7 +34,10 @@
 #define NUM_WINGDINGS (sizeof(wingdings) / sizeof(*wingdings))
 
 /* The common terminating byte for Wingdings. */
-#define WD_TERM_VAL (-114)
+#define WD_TERM (-114)
+
+#define WD_TERM_EXC_1 (-80)
+#define WD_TERM_EXC_2 (-75)
 
 static const char *const wingdings[] = {
     // Symbols 1 (!, ", #, $, %, &, ', (, ), *, +, ',' , -, ., /) (15 listed)

@@ -78,10 +78,7 @@ static action_code_t wd_to_ascii_translator(void) {
   while (1) {
     FILE *input_stream;
     {
-      /*
-       * `open_stream_from_user()` is inlined here with a few tweaks in order to
-       * check for keywords.
-       */
+      /* `open_stream_from_user()` is inlined here for keyword checking. */
       fputs("Enter a file containing Wingdings: ", stdout);
       char filepath_buf[FILEPATH_MAX_LENGTH];
       for (size_t i = 0; i < sizeof(filepath_buf); i++) {
@@ -92,6 +89,7 @@ static action_code_t wd_to_ascii_translator(void) {
         }
         filepath_buf[i] = c;
       }
+      puts(filepath_buf);
       const action_code_t code = is_keyword(filepath_buf);
       if (code != ACTION_CODE_NONE) {
         delete_string(wd_input);
