@@ -26,7 +26,7 @@ string_t *ascii_str_to_wd_str(const char *ascii_str, string_t *wd_output) {
   return wd_output;
 }
 
-int get_sorted_wd_char_index(const char *const wd_char) {
+int search_sorted_wingdings(const char *const wd_char) {
   size_t min = 0, max = NUM_WINGDINGS;
   while (min < max) {
     const size_t mid = (min + max) / 2;
@@ -41,52 +41,58 @@ int get_sorted_wd_char_index(const char *const wd_char) {
   return -1;
 }
 
+int search_for_wd_candidate(const char *const wd_cand) {
+  switch (*wd_cand) {
+    /*
+     * These cases comprise all of the possible first bytes within a Wingdings.
+     * See the files within `wdanalysis/pre-generated` for details.
+     */
+    case -16:
+    case -30:
+    case -32: {
+      /*
+       * For most Wingdings, the final byte (shown as `int`) in their
+       * representation will be `-114`. However, `-80` and `-75` can be
+       * the final byte for two edge case Wingdings (🙰, 🙵). The aforementioned
+       * Wingdings also have an abnormal length of `4` compared to the usual
+       * `6` or `7`.
+       */
+      size_t wd_length;
+      if (wd_cand[5] == WD_TERM)
+        wd_length = 6;
+      else if (wd_cand[6] == WD_TERM)
+        wd_length = 7;
+      else if (wd_cand[3] == WD_TERM_EXC_1 || wd_cand[3] == WD_TERM_EXC_2)
+        wd_length = 4;
+      else
+        break;
+      char wingdings_container[MAX_WINGDINGS_SIZE];
+      strncpy(wingdings_container, wd_cand, wd_length);
+      wingdings_container[wd_length] = '\0';
+      return search_sorted_wingdings(wingdings_container);
+    }
+  }
+  return -1;
+}
+
 char wd_char_to_ascii_char(const char *const wd_char) {
-  const int wd_char_index = get_sorted_wd_char_index(wd_char);
+  const int wd_char_index = search_sorted_wingdings(wd_char);
   if (wd_char_index == -1) return '\0';
   return sorted_wd_to_ascii[wd_char_index];
 }
 
 string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output) {
   while (*wd_str != '\0') {
-    /*
-     * These cases comprise all of the possible first bytes within a Wingdings.
-     * See the files within `wdanalysis/pre-generated` for details.
-     */
-    size_t wd_length = 0;
-    switch (*wd_str) {
-      /* Anything without a valid Wingdings counterpart can be copied as is. */
-      default:
-        ascii_output = append_char(ascii_output, *wd_str);
-        wd_str++;
-        break;
-
-      case -16:
-      case -30:
-      case -32: {
-        /*
-         * For most Wingdings, the final byte (shown as `int`) in their
-         * representation will be `-114`. However, `-80` and `-75` can be
-         * the final byte for two edge case Wingdings (🙰, 🙵). The aforementioned
-         * Wingdings also have an abnormal length of `4` compared to the usual
-         * `6` or `7`.
-         */
-        if (wd_str[5] == WD_TERM)
-          wd_length = 6;
-        else if (wd_str[6] == WD_TERM)
-          wd_length = 7;
-        else if (wd_str[3] == WD_TERM_EXC_1 || wd_str[3] == WD_TERM_EXC_2)
-          wd_length = 4;
-        else
-          break;
-        char wingdings_container[MAX_WINGDINGS_SIZE];
-        strncpy(wingdings_container, wd_str, wd_length);
-        wingdings_container[wd_length] = '\0';
-        ascii_output = append_char(ascii_output,
-                                   wd_char_to_ascii_char(wingdings_container));
-        wd_str += wd_length;
-      }
+    const int wd_index = search_for_wd_candidate(wd_str);
+    if (wd_index == -1) {
+      ascii_output = append_char(ascii_output, *wd_str);
+      wd_str++;
+      continue;
     }
+    const char *const wd_char = sorted_wingdings[wd_index];
+    const char ascii_char = sorted_wd_to_ascii[wd_index];
+    ascii_output = append_char(ascii_output, ascii_char);
+    wd_str += strlen(wd_char);
   }
   return ascii_output;
 }

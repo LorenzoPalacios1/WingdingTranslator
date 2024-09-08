@@ -94,7 +94,7 @@ static const char *const sorted_wingdings[] = {
  * to `sorted_wingdings`.
  *
  * (I know ']' is repeated. It's probably a mistake I made early on when
- * compiling all the wingdings here.)
+ * compiling all the Wingdings here.)
  */
 static const char sorted_wd_to_ascii[] = {
     '@', '\\', 'z', '6', 'x', 'y', 'n', 'o',  'u', 'l', 'p', 'E', 'G', 'F',
@@ -116,7 +116,19 @@ string_t *ascii_char_to_wd_char(char ascii_char);
 
 string_t *ascii_str_to_wd_str(const char *ascii_str, string_t *wd_output);
 
-int get_sorted_wd_char_index(const char *const wd_char);
+/*
+ * This function was made as a helper for `wd_str_to_ascii_str()`.
+ *
+ * @note This function is intended to be called numerous times over a stream of
+ * characters which may contain Wingdings. If you are looking at a single,
+ * isolated instance of Wingdings, use `search_sorted_wingdings()`.
+ *
+ * @return A valid index of `sorted_wingdings`, or `-1` if the
+ * contents of `wd_candidate` did not match any known Wingdings.
+ */
+int search_for_wd_candidate(const char *const wd_cand);
+
+int search_sorted_wingdings(const char *const wd_char);
 
 string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output);
 
