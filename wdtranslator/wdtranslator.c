@@ -79,10 +79,9 @@ string_t *wd_str_to_ascii_str(const char *wd_str, string_t *ascii_output) {
           wd_length = 4;
         else
           break;
-        printf("%zu\n", wd_length);
         char wingdings_container[MAX_WINGDINGS_SIZE];
         strncpy(wingdings_container, wd_str, wd_length);
-        wingdings_container[wd_length + 1] = '\0';
+        wingdings_container[wd_length] = '\0';
         ascii_output = append_char(ascii_output,
                                    wd_char_to_ascii_char(wingdings_container));
         wd_str += wd_length;
