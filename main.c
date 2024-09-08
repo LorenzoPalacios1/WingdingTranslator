@@ -89,7 +89,6 @@ static action_code_t wd_to_ascii_translator(void) {
         }
         filepath_buf[i] = c;
       }
-      puts(filepath_buf);
       const action_code_t code = is_keyword(filepath_buf);
       if (code != ACTION_CODE_NONE) {
         delete_string(wd_input);
@@ -122,9 +121,10 @@ static action_code_t wd_to_ascii_translator(void) {
  */
 static translator_code_t prompt_for_translator(void) {
   while (1) {
-    puts("\nChoose your translator:");
-    puts("1. Translate ASCII-to-Wingdings");
-    puts("2. Translate Wingdings-to-ASCII");
+    puts(
+        "\nChoose your translator:\n"
+        "1. Translate ASCII-to-Wingdings\n"
+        "2. Translate Wingdings-to-ASCII");
     char buf[] = {getchar(), '\0'};
     const translator_code_t user_selection = atoi(buf);
     if (buf[0] != '\n') consume_line(stdin);
